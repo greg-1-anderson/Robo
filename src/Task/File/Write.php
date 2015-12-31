@@ -140,4 +140,8 @@ class Write extends BaseTask
         }
         return Result::success($this);
     }
+
+    public function getPath() {
+        return $this->filename;
+    }
 }
