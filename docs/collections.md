@@ -72,7 +72,7 @@ class RoboFile extends \Robo\Tasks
         // Add a rollback task
         $this->taskFileSystemStack()
           ->rmdir('work')
-          ->addAsRollback();
+          ->addAsRollback($collection);
 
         $this->taskOther('work')
           ->addToCollection($collection);
