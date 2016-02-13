@@ -126,6 +126,7 @@ class RoboFile extends \Robo\Tasks
      */
     public function docs()
     {
+        $collection = $this->collection();
         $files = Finder::create()->files()->name('*.php')->in('src/Task');
         $docs = [];
         foreach ($files as $file) {
@@ -181,8 +182,9 @@ class RoboFile extends \Robo\Tasks
 
                     return $text ? ' ' . trim(strtok($text, "\n"), "\n") : '';
                 }
-            )->run();
+            )->addToCollection($collection);
         }
+        $collection->run();
     }
 
     /**
@@ -190,17 +192,23 @@ class RoboFile extends \Robo\Tasks
      */
     public function publish()
     {
-        $this->stopOnFail();
+        $collection = $this->collection();
         $this->taskGitStack()
             ->checkout('site')
             ->merge('master')
-            ->run();
-        $this->_copy('CHANGELOG.md', 'docs/changelog.md');
-        $this->_exec('mkdocs gh-deploy');
+            ->addToCollection($collection);
         $this->taskGitStack()
             ->checkout('master')
-            ->run();
-        $this->_remove('docs/changelog.md');
+            ->addAsCompletion($collection);
+        $this->taskFilesystemStack()
+            ->copy('CHANGELOG.md', 'docs/changelog.md')
+            ->addToCollection($collection);
+        $this->taskFilesystemStack()
+            ->remove('docs/changelog.md')
+            ->addAsCompletion($collection);
+        $this->taskExec('mkdocs gh-deploy')
+            ->addToCollection($collection);
+        $collection->run();
     }
 
     public function pharBuild()
