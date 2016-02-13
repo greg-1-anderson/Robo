@@ -192,13 +192,15 @@ class RoboFile extends \Robo\Tasks
      */
     public function publish()
     {
+        $current_branch = exec('git rev-parse --abbrev-ref HEAD');
+
         $collection = $this->collection();
         $this->taskGitStack()
             ->checkout('site')
             ->merge('master')
             ->addToCollection($collection);
         $this->taskGitStack()
-            ->checkout('master')
+            ->checkout($current_branch)
             ->addAsCompletion($collection);
         $this->taskFilesystemStack()
             ->copy('CHANGELOG.md', 'docs/changelog.md')
@@ -213,12 +215,14 @@ class RoboFile extends \Robo\Tasks
 
     public function pharBuild()
     {
-        $packer = $this->taskPackPhar('robo.phar');
+        $collection = $this->collection();
+
         $this->taskComposerInstall()
             ->noDev()
             ->printed(false)
-            ->run();
+            ->addToCollection($collection);
 
+        $packer = $this->taskPackPhar('robo.phar');
         $files = Finder::create()->ignoreVCS(true)
             ->files()
             ->name('*.php')
@@ -237,11 +241,13 @@ class RoboFile extends \Robo\Tasks
         }
         $packer->addFile('robo','robo')
             ->executable('robo')
-            ->run();
+            ->addToCollection($collection);
 
         $this->taskComposerInstall()
             ->printed(false)
-            ->run();
+            ->addToCollection($collection);
+
+        $collection->run();
     }
 
     public function pharInstall()
