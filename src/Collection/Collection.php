@@ -99,9 +99,10 @@ class Collection implements TaskInterface
         // Wrap the task as necessary.
         $rollbackTask = $this->wrapTask($rollbackTask);
         $collection = $this;
-        $this->addToTaskStack(self::UNNAMEDTASK, function () use ($collection, $rollbackTask) {
+        $rollbackRegistrationTask = $this->wrapTask(function () use ($collection, $rollbackTask) {
             $collection->registerRollback($rollbackTask);
         });
+        $this->addToTaskStack(self::UNNAMEDTASK, $rollbackRegistrationTask);
         return $this;
     }
 
@@ -120,9 +121,10 @@ class Collection implements TaskInterface
         // Wrap the task as necessary.
         $completionTask = $this->wrapTask($completionTask);
         $collection = $this;
-        $this->addToTaskStack(self::UNNAMEDTASK, function () use ($collection, $completionTask) {
+        $completionRegistrationTask = $this->wrapTask(function () use ($collection, $completionTask) {
             $collection->registerCompletion($completionTask);
         });
+        $this->addToTaskStack(self::UNNAMEDTASK, $completionRegistrationTask);
         return $this;
     }
 
@@ -268,7 +270,7 @@ class Collection implements TaskInterface
      * @param TaskInterface
      *   The task to run
      */
-    protected function addTask($name, TaskInterface $task)
+    protected function addTask($name, $task)
     {
         // Wrap the task as necessary.
         $task = $this->wrapTask($task);
@@ -464,8 +466,8 @@ class Collection implements TaskInterface
                 $taskResult = $task->run();
                 // If the current task returns an error code, then stop
                 // execution and signal a rollback.
-                if (!$result->wasSuccessful()) {
-                    return $result;
+                if (!$taskResult->wasSuccessful()) {
+                    return $taskResult;
                 }
                 // We accumulate our results into a field so that tasks that
                 // have a reference to the collection may examine and modify
