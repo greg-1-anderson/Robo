@@ -14,84 +14,56 @@ Following this pattern will keep your code linear and easy to understand.
 
 ## Basic Collection Example
 
-A simple example is shown below:
+The 'publish' command from Robo's own RoboFile is shown below:
 
 ``` php
 <?php
 class RoboFile extends \Robo\Tasks
 {
-    function myOperation()
+    public function publish()
     {
-        // Determine the value of any variables that will control
-        // task execution.
-        $baseDir = 'logs';
-        
-        // Create a collection.
+        $current_branch = exec('git rev-parse --abbrev-ref HEAD');
+
         $collection = $this->collection();
-        
-        // Add some filesystem tasks to the collection
-        $this->taskFileSystemStack()
-          ->mkdir($baseDir)
-          ->touch("$baseDir/.gitignore")
-          ->chgrp($baseDir, 'www-data')
-          ->symlink('/var/log/nginx/error.log', '$baseDir/error.log')
-          ->addToCollection($collection);
-        
-        // Add some other tasks.
-        $this->taskOther($baseDir)
-          ->addToCollection($collection);
-        
-        // Run all of our tasks.
-        $result = $collection->run();
+        $this->taskGitStack()
+            ->checkout('site')
+            ->merge('master')
+            ->addToCollection($collection);
+        $this->taskGitStack()
+            ->checkout($current_branch)
+            ->addAsCompletion($collection);
+        $this->taskFilesystemStack()
+            ->copy('CHANGELOG.md', 'docs/changelog.md')
+            ->addToCollection($collection);
+        $this->taskFilesystemStack()
+            ->remove('docs/changelog.md')
+            ->addAsCompletion($collection);
+        $this->taskExec('mkdocs gh-deploy')
+            ->addToCollection($collection);
+        $collection->run();
     }
 }
 ?>
 ```
+Note that code that uses collections looks very similar to similar code that does not use collections; the main difference is that `addToCollection($collection)` is used in place of the `run()` method. This deferrs execution of the task until it is run as part of the collection. When `$collection->run()` is executed, all of the tasks in the collection will run, and the final result (a Robo\Result object) will be returned. If any of the tasks fail, then the tasks that follow are skipped.
 
-When `$collection->run()` is executed, all of the tasks in the collection will run, and the final result (a Robo\Result object) will be returned. If any of the tasks fail, then the tasks that follow are skipped.
+The example above also adds a couple of tasks as "completions"; these are run when the collection completes execution, as explained below.
 
-## Rollbacks
+## Rollbacks and Completions
 
-It is also possible to add rollback tasks to a collection.  A rollback task is executed if all of the tasks that come before it succeed, and at least one of the tasks that come after it fails.  If all tasks succeed, then no rollback tasks are executed.
+Robo also provides rollbacks and completions, special tasks that are eligible to run only if all of the tasks added to the collection before them succeed. The section below explains the circumstances under which these tasks will run.
+
+### Completion Tasks
+
+Completions run whenever their collection completes or fails, but only if all of the tasks that come before it succeed. An example of this is shown in the first example above. A filesystem stack task copies CHANDELOG.md to docs/changelog.md; after this task is added to the collection, another filesystem stack task is added as a completion to delete docs/changelog.md. This is done because docs/changelog.md is only intended to exist long enough to be used by the `mkdocs` task, which is added later. 
 
 ### Rollback Tasks
 
-Rollback tasks can be used to clean up after failures, so the state of the system does not change when execution is interrupted by an error. An example of this is shown below:
+In addition to completions, Robo also supports rollbacks. Rollback tasks can be used to clean up after failures, so the state of the system does not change when execution is interrupted by an error. A rollback task is executed if all of the tasks that come before it succeed, and at least one of the tasks that come after it fails.  If all tasks succeed, then no rollback tasks are executed.
 
-``` php
-<?php
-class RoboFile extends \Robo\Tasks
-{
-    function myOperation()
-    {
-        $collection = $this->collection();
-        $this->taskFileSystemStack()
-          ->mkdir('work')
-          ->addToCollection($collection);
-        
-        // Add a rollback task
-        $this->taskFileSystemStack()
-          ->rmdir('work')
-          ->addAsRollback($collection);
-
-        $this->taskOther('work')
-          ->addToCollection($collection);
-        
-        $result = $collection->run();
-    }
-}
-?>
-```
-
-In the example above, if the `mkdir('work')` fails, then neither the rollback task nor the 'taskOther' task will be executed.  If it works, though, then `taskOther()` will also be executed; if `taskOther()` fails, then the rollback task will be run, and the 'work' directory will be removed.
-
-### Rollback Methods
+### Rollback and Completion Methods
 
 Any task may also implement \Robo\Contract\RollbackInterface; if this is done, then its `rollback()` method will be called if the task is `run()` on a collection that later fails.
-
-## Completions
-
-In addition to rollbacks, Robo collections also support completions.  Completions run whenever their collection completes or rolls back, but only if all of the tasks that come before it succeed.
 
 Use `addAsCompletion($collection)` in place of `addAsRollback($collection)`, or implement \Robo\Contract\CompletionInterface. Completions otherwise work exactly like rollbacks.
 
@@ -135,17 +107,22 @@ class RoboFile extends \Robo\Tasks
 
 In the previous example, the path to the temporary directory is stored in the variable `$work`, and is passed as needed to the parameters of the other tasks as they are added to the collection. After the task collection is run, the temporary directory will be automatically deleted. In the example above, the temporary directory is renamed by the last task in the collection. This allows the working directory to persist; the collection will still attempt to remove the working directory, but no errors will be thrown if it no longer exists in its original location. Following this pattern allows Robo scripts to easily and safely do work that cleans up after itself on failure, without introducing a lot of branching or additional error recovery code.
 
+Temporary directories may also be created via the shortcut `$this->_tmpDir();`. Temporary directories created in this way are deleted when the script terminates.
+
 ### Temporary Files
 
 Robo also provides an API for creating temporary files. They may be created via `$this->taskTmpFile()`; they are used exactly like `$this->taskWrite()`, except they are given a random name on creation, and are deleted when their collection completes.  If they are not added to a collection, then they are deleted when the script terminates.
 
 ### The Temporary Global Collection
 
-Robo maintains a global collection named Temporary that is used to keep track of object temporary objects that are created, but not added to any collection.  These objects are automatically removed when the script terminates.
+Robo maintains a special collection called the Temporary global collection. This collection is used to keep track of temporary objects that are not part of any collection. For example, Robo temporary directories and temporary files are managed by the Temporary global collection. These temporary objects are cleaned up automatically when the script terminates.
 
-To make a task behave like a temporary object, extend \Robo\Contract\CompletionInterface, and wrap the task object using `Temporary::wrap()` in its loadShortcuts factory function. Then, the task's `complete()` method will be called if its collection completes or rolls back.
+It is easy to create your own temporary tasks that behave in the same way as the provided temporary directory and temporary file tasks. There are two steps required:
 
-The taskTmpFile factory function looks like this:
+- Implement \Robo\Contract\CompletionInterface
+- Wrap the task via Temporary::wrap()
+
+For example, the implementation of taskTmpFile() looks like this:
 
 ``` php
 <?php
@@ -156,9 +133,7 @@ The taskTmpFile factory function looks like this:
 ?>
 ```
 
-The wrapped task will be added to the Temporary global collection if its `run()` method is called. Robo will automatically unwrap the object if it is added to some other collection, in which case it will be cleaned up if it is `run()` on that collection, once it completes or rolls back.
-
-Note, therefore, that a Temporary object is simply a Completion that is also added to the Temporary global collection.
+The `complete()` method of the task will be called once the Collection the temporary object is attached to finishes running. If the temporary is not added to a collection, then its `complete()` method will be called when the script terminates.
 
 ## Adding Tasks to Collections
 
