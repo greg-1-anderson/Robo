@@ -101,7 +101,7 @@ class RoboFile extends \Robo\Tasks
         $this->taskGitHubRelease(\Robo\Runner::VERSION)
             ->user($this->ask('User releasing'))
             ->password($this->askHidden('Password'))
-            ->uri('consolidation-org/Robo')
+            ->uri('greg-1-anderson/Robo')
             ->description($releaseDescription)
             ->run();
 
