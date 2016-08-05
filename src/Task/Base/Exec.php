@@ -3,6 +3,7 @@ namespace Robo\Task\Base;
 
 use Robo\Contract\CommandInterface;
 use Robo\Contract\PrintedInterface;
+use Robo\Contract\SimulatedInterface;
 use Robo\Task\BaseTask;
 use Symfony\Component\Process\Process;
 use Robo\Result;
@@ -25,15 +26,18 @@ use Robo\Result;
  * ?>
  * ```
  */
-class Exec extends BaseTask implements CommandInterface, PrintedInterface
+class Exec extends BaseTask implements CommandInterface, PrintedInterface, SimulatedInterface
 {
     use \Robo\Common\CommandReceiver;
     use \Robo\Common\ExecOneCommand;
+
+    protected static $instances = [];
 
     protected $command;
     protected $background = false;
     protected $timeout = null;
     protected $idleTimeout = null;
+    protected $env = null;
 
     /**
      * @var Process
@@ -57,6 +61,7 @@ class Exec extends BaseTask implements CommandInterface, PrintedInterface
      */
     public function background()
     {
+        self::$instances[] = $this;
         $this->background = true;
         return $this;
     }
@@ -85,6 +90,18 @@ class Exec extends BaseTask implements CommandInterface, PrintedInterface
         return $this;
     }
 
+    /**
+     * Sets the environment variables for the command
+     *
+     * @param $env
+     * @return $this
+     */
+    public function env(array $env)
+    {
+        $this->env = $env;
+        return $this;
+    }
+
     public function __destruct()
     {
         $this->stop();
@@ -94,20 +111,28 @@ class Exec extends BaseTask implements CommandInterface, PrintedInterface
     {
         if ($this->background && $this->process->isRunning()) {
             $this->process->stop();
-            $this->printTaskInfo("stopped <info>{$this->command}</info>");
+            $this->printTaskInfo("Stopped {command}", ['command' => $this->getCommand()]);
         }
+    }
+
+    protected function printAction($context = [])
+    {
+        $command = $this->getCommand();
+        $dir = $this->workingDirectory ? " in {dir}" : "";
+        $this->printTaskInfo("Running {command}$dir", ['command' => $command, 'dir' => $this->workingDirectory] + $context);
     }
 
     public function run()
     {
-        $command = $this->getCommand();
-        $dir = $this->workingDirectory ? " in " . $this->workingDirectory : "";
-        $this->printTaskInfo("running <info>{$command}</info>$dir");
-        $this->process = new Process($command);
+        $this->printAction();
+        $this->process = new Process($this->getCommand());
         $this->process->setTimeout($this->timeout);
         $this->process->setIdleTimeout($this->idleTimeout);
         $this->process->setWorkingDirectory($this->workingDirectory);
 
+        if (isset($this->env)) {
+            $this->process->setEnv($this->env);
+        }
 
         if (!$this->background and !$this->isPrinted) {
             $this->startTimer();
@@ -120,7 +145,9 @@ class Exec extends BaseTask implements CommandInterface, PrintedInterface
             $this->startTimer();
             $this->process->run(
                 function ($type, $buffer) {
+                    $progressWasVisible = $this->hideTaskProgress();
                     print($buffer);
+                    $this->showTaskProgress($progressWasVisible);
                 }
             );
             $this->stopTimer();
@@ -130,8 +157,28 @@ class Exec extends BaseTask implements CommandInterface, PrintedInterface
         try {
             $this->process->start();
         } catch (\Exception $e) {
-            return Result::error($this, $e->getMessage());
+            return Result::fromException($this, $e);
         }
         return Result::success($this);
     }
+
+    public function simulate($context)
+    {
+        $this->printAction($context);
+    }
+
+    public static function stopRunningJobs()
+    {
+        foreach (self::$instances as $instance) {
+            if ($instance) {
+                unset($instance);
+            }
+        }
+    }
 }
+
+if (function_exists('pcntl_signal')) {
+    pcntl_signal(SIGTERM, ['Robo\Task\Base\Exec', 'stopRunningJobs']);
+}
+
+register_shutdown_function(['Robo\Task\Base\Exec', 'stopRunningJobs']);

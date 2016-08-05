@@ -7,11 +7,20 @@ use Robo\Exception\TaskException;
 abstract class Base extends BaseTask
 {
     use \Robo\Common\ExecOneCommand;
+    use \Robo\Common\IO;
 
     protected $prefer;
     protected $dev;
     protected $optimizeAutoloader;
+    protected $ansi;
     protected $dir;
+
+    /**
+     * Action to use
+     *
+     * @var string
+     */
+    protected $action = '';
 
     /**
      * adds `prefer-dist` option to composer
@@ -47,6 +56,28 @@ abstract class Base extends BaseTask
     }
 
     /**
+     * adds `no-ansi` option to composer
+     *
+     * @return $this
+     */
+    public function noAnsi()
+    {
+        $this->ansi = '--no-ansi';
+        return $this;
+    }
+
+    /**
+     * adds `ansi` option to composer
+     *
+     * @return $this
+     */
+    public function ansi()
+    {
+        $this->ansi = '--ansi';
+        return $this;
+    }
+
+    /**
      * adds `optimize-autoloader` option to composer
      *
      * @return $this
@@ -59,16 +90,16 @@ abstract class Base extends BaseTask
 
     public function __construct($pathToComposer = null)
     {
-        if ($pathToComposer) {
-            $this->command = $pathToComposer;
-        } elseif (file_exists('composer.phar')) {
-            $this->command = 'php composer.phar';
-        } elseif (is_executable('/usr/bin/composer')) {
-            $this->command = '/usr/bin/composer';
-        } elseif (is_executable('/usr/local/bin/composer')) {
-            $this->command = '/usr/local/bin/composer';
-        } else {
-            throw new TaskException(__CLASS__, "Neither local composer.phar nor global composer installation not found");
+        $this->command = $pathToComposer;
+        if (!$this->command) {
+            $this->command = $this->findExecutablePhar('composer');
+        }
+        if (!$this->command) {
+            throw new TaskException(__CLASS__, "Neither local composer.phar nor global composer installation could be found.");
+        }
+
+        if ($this->getOutput()->isDecorated()) {
+            $this->ansi();
         }
     }
 
@@ -76,7 +107,8 @@ abstract class Base extends BaseTask
     {
         $this->option($this->prefer)
             ->option($this->dev)
-            ->option($this->optimizeAutoloader);
+            ->option($this->optimizeAutoloader)
+            ->option($this->ansi);
         return "{$this->command} {$this->action}{$this->arguments}";
     }
 }

@@ -1,7 +1,6 @@
 <?php
 namespace Robo\Task\Docker;
 
-
 /**
  * Commits docker container to an image
  *
@@ -12,7 +11,7 @@ namespace Robo\Task\Docker;
  *
  * // alternatively you can take the result from DockerRun task:
  *
- * $result = $this->taskDockerRun('db)
+ * $result = $this->taskDockerRun('db')
  *      ->exec('./prepare_database.sh')
  *      ->run();
  *
@@ -42,5 +41,4 @@ class Commit extends Base
         $this->name = $name;
         return $this;
     }
-
 }

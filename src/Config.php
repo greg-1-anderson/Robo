@@ -1,26 +1,66 @@
-<?php 
+<?php
 namespace Robo;
-
-use Symfony\Component\Console\Output\OutputInterface;
 
 class Config
 {
-    protected static $config = [
-        'output' => null,
-    ];
+    const PROGRESS_BAR_AUTO_DISPLAY_INTERVAL = 'progress-delay';
+    const SIMULATE = 'simulate';
+    const SUPRESS_MESSAGES = 'supress-messages';
 
-    public static function setOutput(OutputInterface $output)
+    protected $config = [];
+
+    public function get($key, $default = null)
     {
-        self::$config['output'] = $output;
+        return isset($this->config[$key]) ? $this->config[$key] : $default;
     }
 
-    public static function get($key, $default = null)
+    public function set($key, $value)
     {
-        return isset(self::$config[$key]) ? self::$config[$key] : $default;
+        $this->config[$key] = $value;
+        return $this;
     }
 
-    public static function set($key, $value)
+    public function setGlobalOptions($input)
     {
-        self::$config[$key] = $value;
+        $globalOptions =
+        [
+            self::PROGRESS_BAR_AUTO_DISPLAY_INTERVAL => 2,
+            self::SIMULATE => false,
+            self::SUPRESS_MESSAGES => false,
+        ];
+
+        foreach ($globalOptions as $option => $default) {
+            $value = $input->hasOption($option) ? $input->getOption($option) : null;
+            // Unfortunately, the `?:` operator does not differentate between `0` and `null`
+            if (!isset($value)) {
+                $value = $default;
+            }
+            $this->set($option, $value);
+        }
+    }
+
+    public function isSimulated()
+    {
+        return $this->get(self::SIMULATE);
+    }
+
+    public function setSimulated($simulated = true)
+    {
+        return $this->set(self::SIMULATE, $simulated);
+    }
+
+    public function isSupressed()
+    {
+        return $this->get(self::SUPRESS_MESSAGES);
+    }
+
+    public function setSupressed($supressed = true)
+    {
+        return $this->set(self::SUPRESS_MESSAGES, $supressed);
+    }
+
+    public function setProgressBarAutoDisplayInterval($interval)
+    {
+        return $this->set(self::PROGRESS_BAR_AUTO_DISPLAY_INTERVAL, $interval);
     }
 }

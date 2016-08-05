@@ -5,7 +5,6 @@ use Lurker\Event\FilesystemEvent;
 use Lurker\ResourceWatcher;
 use Robo\Result;
 use Robo\Task\BaseTask;
-use Symfony\Component\EventDispatcher\Event;
 
 /**
  * Runs task when specified file or dir was changed.
@@ -40,11 +39,14 @@ class Watch extends BaseTask
         }
         $this->monitor[] = [$paths, $callable];
         return $this;
-
     }
 
     public function run()
     {
+        if (!class_exists('Lurker\\ResourceWatcher')) {
+            return Result::errorMissingPackage($this, 'ResourceWatcher', 'henrikbjorn/lurker');
+        }
+
         $watcher = new ResourceWatcher();
 
         foreach ($this->monitor as $k => $monitor) {
@@ -52,7 +54,7 @@ class Watch extends BaseTask
             $closure->bindTo($this->bindTo);
             foreach ($monitor[0] as $i => $dir) {
                 $watcher->track("fs.$k.$i", $dir, FilesystemEvent::MODIFY);
-                $this->printTaskInfo("watching <info>$dir</info> for changes...");
+                $this->printTaskInfo('Watching {dir} for changes...', ['dir' => $dir]);
                 $watcher->addListener("fs.$k.$i", $closure);
             }
         }
@@ -60,5 +62,4 @@ class Watch extends BaseTask
         $watcher->start();
         return Result::success($this);
     }
-
 }

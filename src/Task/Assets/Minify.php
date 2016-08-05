@@ -19,7 +19,6 @@ use Robo\Task\BaseTask;
  * "patchwork/jsqueeze": "~1.0",
  * "natxet/CssMin": "~3.0"
  * ```
- *
  */
 class Minify extends BaseTask
 {
@@ -35,6 +34,13 @@ class Minify extends BaseTask
     /** @var string $type css|js */
     protected $type;
 
+    /** @var array $squeezeOptions */
+    protected $squeezeOptions = [
+        'singleLine' => true,
+        'keepImportantComments' => true,
+        'specialVarRx' => false,
+    ];
+
     /**
      * Constructor. Accepts asset file path or string source.
      *
@@ -43,10 +49,11 @@ class Minify extends BaseTask
     public function __construct($input)
     {
         if (file_exists($input)) {
-            return $this->fromFile($input);
+            $this->fromFile($input);
+            return;
         }
 
-        return $this->fromText($input);
+        $this->fromText($input);
     }
 
     /**
@@ -142,14 +149,31 @@ class Minify extends BaseTask
     protected function getMinifiedText()
     {
         switch ($this->type) {
-
             case 'css':
+                if (!class_exists('\CssMin')) {
+                    return Result::errorMissingPackage($this, 'CssMin', 'natxet/CssMin');
+                }
+
                 return \CssMin::minify($this->text);
                 break;
 
             case 'js':
-                $jsqueeze = new \JSqueeze();
-                return $jsqueeze->squeeze($this->text);
+                if (!class_exists('\JSqueeze') && !class_exists('\Patchwork\JSqueeze')) {
+                    return Result::errorMissingPackage($this, 'Patchwork\JSqueeze', 'patchwork/jsqueeze');
+                }
+
+                if (class_exists('\JSqueeze')) {
+                    $jsqueeze = new \JSqueeze();
+                } else {
+                    $jsqueeze = new \Patchwork\JSqueeze();
+                }
+
+                return $jsqueeze->squeeze(
+                    $this->text,
+                    $this->squeezeOptions['singleLine'],
+                    $this->squeezeOptions['keepImportantComments'],
+                    $this->squeezeOptions['specialVarRx']
+                );
                 break;
         }
 
@@ -157,11 +181,44 @@ class Minify extends BaseTask
     }
 
     /**
+     * Single line option for the JS minimisation.
+     *
+     * @return $this;
+     */
+    public function singleLine($singleLine)
+    {
+        $this->squeezeOptions['singleLine'] = (bool)$singleLine;
+        return $this;
+    }
+
+    /**
+     * keepImportantComments option for the JS minimisation.
+     *
+     * @return $this;
+     */
+    public function keepImportantComments($keepImportantComments)
+    {
+        $this->squeezeOptions['keepImportantComments'] = (bool)$keepImportantComments;
+        return $this;
+    }
+
+    /**
+     * specialVarRx option for the JS minimisation.
+     *
+     * @return $this;
+     */
+    public function specialVarRx($specialVarRx)
+    {
+        $this->squeezeOptions['specialVarRx'] = (bool)$specialVarRx;
+        return $this;
+    }
+
+    /**
      * @return string
      */
     public function __toString()
     {
-        return $this->getMinifiedText();
+        return (string) $this->getMinifiedText();
     }
 
     /**
@@ -179,30 +236,41 @@ class Minify extends BaseTask
             return Result::error($this, 'Unknown file destination.');
         }
 
+        if (file_exists($this->dst) && !is_writable($this->dst)) {
+            return Result::error($this, 'Destination already exists and cannot be overwritten.');
+        }
+
         $size_before = strlen($this->text);
         $minified = $this->getMinifiedText();
 
-        if (false === $minified) {
+        if ($minified instanceof Result) {
+            return $minified;
+        } elseif (false === $minified) {
             return Result::error($this, 'Minification failed.');
         }
 
         $size_after = strlen($minified);
         $dst = $this->dst . '.part';
         $write_result = file_put_contents($dst, $minified);
-        rename($dst, $this->dst);
 
         if (false === $write_result) {
+            @unlink($dst);
             return Result::error($this, 'File write failed.');
         }
-
-        $minified_percent = number_format(100 - ($size_after / $size_before * 100), 1);
-        $this->printTaskInfo(
-            sprintf(
-                'Wrote <info>%s</info> (reduced by <info>%s%%</info>)', $this->dst,
-                $minified_percent
-            )
-        );
-
+        // Cannot be cross-volume; should always succeed.
+        @rename($dst, $this->dst);
+        if ($size_before === 0) {
+            $minified_percent = 0;
+        } else {
+            $minified_percent = number_format(100 - ($size_after / $size_before * 100), 1);
+        }
+        $this->printTaskSuccess('Wrote {filepath}', ['filepath' => $this->dst]);
+        $context = [
+            'bytes' => $this->formatBytes($size_after),
+            'reduction' => $this->formatBytes(($size_before - $size_after)),
+            'percentage' => $minified_percent,
+        ];
+        $this->printTaskSuccess('Wrote {bytes} (reduced by {reduction} / {percentage})', $context);
         return Result::success($this, 'Asset minified.');
     }
 }

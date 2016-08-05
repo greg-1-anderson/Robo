@@ -1,18 +1,18 @@
 <?php
 namespace Robo\Task\Development;
 
-use Robo\Common\Timer;
+use Robo\Contract\ProgressIndicatorAwareInterface;
+use Robo\Common\ProgressIndicatorAwareTrait;
 use Robo\Contract\PrintedInterface;
 use Robo\Result;
 use Robo\Task\BaseTask;
-use Symfony\Component\Console\Helper\ProgressBar;
 
 /**
- * Creates Phar
+ * Creates Phar.
  *
  * ``` php
  * <?php
- * $pharTask = $this->PackPhar('package/codecept.phar')
+ * $pharTask = $this->taskPackPhar('package/codecept.phar')
  *   ->compress()
  *   ->stub('package/stub.php');
  *
@@ -38,10 +38,8 @@ use Symfony\Component\Console\Helper\ProgressBar;
  * ?>
  * ```
  */
-class PackPhar extends BaseTask implements PrintedInterface
+class PackPhar extends BaseTask implements PrintedInterface, ProgressIndicatorAwareInterface
 {
-    use Timer;
-
     /**
      * @var \Phar
      */
@@ -97,31 +95,40 @@ EOF;
         return $this;
     }
 
+    public function progressIndicatorSteps()
+    {
+        // run() will call advanceProgressIndicator() once for each
+        // file, one after calling stopBuffering, and again after compression.
+        return count($this->files)+2;
+    }
+
     public function run()
     {
-        $this->printTaskInfo("creating <info>{$this->filename}</info>");
+        $this->printTaskInfo('Creating {filename}', ['filename' => $this->filename]);
         $this->phar->setSignatureAlgorithm(\Phar::SHA1);
         $this->phar->startBuffering();
 
-        $this->printTaskInfo('packing ' . count($this->files) . ' files into phar');
-        
-        $progress = new ProgressBar($this->getOutput());
-        $progress->start(count($this->files));
-        $this->startTimer();
+        $this->printTaskInfo('Packing {file-count} files into phar', ['file-count' => count($this->files)]);
+
+        $this->startProgressIndicator();
         foreach ($this->files as $path => $content) {
             $this->phar->addFromString($path, $content);
-            $progress->advance();
+            $this->advanceProgressIndicator();
         }
         $this->phar->stopBuffering();
-        $progress->finish();
-        $this->getOutput()->writeln('');
+        $this->advanceProgressIndicator();
 
         if ($this->compress and in_array('GZ', \Phar::getSupportedCompression())) {
-            $this->printTaskInfo($this->filename . " compressed");
-            $this->phar = $this->phar->compressFiles(\Phar::GZ);
+            if (count($this->files) > 1000) {
+                $this->printTaskInfo('Too many files. Compression DISABLED');
+            } else {
+                $this->printTaskInfo('{filename} compressed', ['filename' => $this->filename]);
+                $this->phar = $this->phar->compressFiles(\Phar::GZ);
+            }
         }
-        $this->stopTimer();
-        $this->printTaskSuccess("<info>{$this->filename}</info> produced");
+        $this->advanceProgressIndicator();
+        $this->stopProgressIndicator();
+        $this->printTaskSuccess('{filename} produced', ['filename' => $this->filename]);
         return Result::success($this, '', ['time' => $this->getExecutionTime()]);
     }
 

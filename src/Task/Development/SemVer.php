@@ -39,7 +39,7 @@ class SemVer implements TaskInterface
         'metadata' => ''
     ];
 
-    public function __construct($filename)
+    public function __construct($filename = '')
     {
         $this->path = $filename;
 
@@ -84,16 +84,25 @@ class SemVer implements TaskInterface
 
     public function increment($what = 'patch')
     {
-        $types = ['major', 'minor', 'patch'];
-        if (!in_array($what, $types)) {
-            throw new TaskException(
-                $this,
-                'Bad argument, only one of the following is allowed: ' .
-                implode(', ', $types)
-            );
+        switch ($what) {
+            case 'major':
+                $this->version['major']++;
+                $this->version['minor'] = 0;
+                $this->version['patch'] = 0;
+                break;
+            case 'minor':
+                $this->version['minor']++;
+                $this->version['patch'] = 0;
+                break;
+            case 'patch':
+                $this->version['patch']++;
+                break;
+            default:
+                throw new TaskException(
+                    $this,
+                    'Bad argument, only one of the following is allowed: major, minor, patch'
+                );
         }
-
-        $this->version[$what]++;
         return $this;
     }
 
@@ -138,7 +147,10 @@ class SemVer implements TaskInterface
     {
         extract($this->version);
         $semver = sprintf(self::SEMVER, $major, $minor, $patch, $special, $metadata);
-        return file_put_contents($this->path, $semver);
+        if (is_writeable($this->path) === false || file_put_contents($this->path, $semver) === false) {
+            throw new TaskException($this, 'Failed to write semver file.');
+        }
+        return true;
     }
 
     protected function parse()

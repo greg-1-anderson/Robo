@@ -24,22 +24,20 @@ class PHPUnit extends BaseTask implements CommandInterface, PrintedInterface
 
     protected $command;
 
+    /**
+     * Test files to run, they're appended to the command and arguments.
+     *
+     * @var string
+     */
+    protected $files = '';
+
     public function __construct($pathToPhpUnit = null)
     {
-        if ($pathToPhpUnit) {
-            $this->command = $pathToPhpUnit;
-        } elseif (file_exists('vendor/bin/phpunit')) {
-            $this->command = 'vendor/bin/phpunit';
-            if (defined('PHP_WINDOWS_VERSION_BUILD')) {
-                $this->command = 'call ' . $this->command;
-            }
-        } elseif (file_exists('phpunit.phar')) {
-            $this->command = 'php phpunit.phar';
-        } elseif (is_executable('/usr/bin/phpunit')) {
-            $this->command = '/usr/bin/phpunit';
-        } elseif (is_executable('~/.composer/vendor/bin/phpunit')) {
-            $this->command = '~/.composer/vendor/bin/phpunit';
-        } else {
+        $this->command = $pathToPhpUnit;
+        if (!$this->command) {
+            $this->command = $this->findExecutablePhar('phpunit');
+        }
+        if (!$this->command) {
             throw new \Robo\Exception\TaskException(__CLASS__, "Neither local phpunit nor global composer installation not found");
         }
     }
@@ -75,14 +73,14 @@ class PHPUnit extends BaseTask implements CommandInterface, PrintedInterface
     }
 
     /**
-     * adds `log-xml` option
+     * adds `log-junit` option
      *
      * @param string $file
      * @return $this
      */
     public function xml($file = null)
     {
-        $this->option("log-xml", $file);
+        $this->option("log-junit", $file);
         return $this;
     }
 
@@ -110,14 +108,29 @@ class PHPUnit extends BaseTask implements CommandInterface, PrintedInterface
         return $this;
     }
 
+    /**
+     * Test files to run.
+     *
+     * @param string|array A single file or a list of files.
+     * @return $this
+     */
+    public function files($files)
+    {
+        if (is_string($files)) {
+            $files = [$files];
+        }
+        $this->files = ' ' . implode(',', $files);
+        return $this;
+    }
+
     public function getCommand()
     {
-        return $this->command . $this->arguments;
+        return $this->command . $this->arguments . $this->files;
     }
 
     public function run()
     {
-        $this->printTaskInfo('Running PHPUnit ' . $this->arguments);
+        $this->printTaskInfo('Running PHPUnit {arguments}', ['arguments' => $this->arguments]);
         return $this->executeCommand($this->getCommand());
     }
 }

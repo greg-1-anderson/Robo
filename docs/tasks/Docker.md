@@ -9,7 +9,7 @@ Builds Docker image
 <?php
 $this->taskDockerBuild()->run();
 
-$this->dockerBuild('path/to/dir')
+$this->taskDockerBuild('path/to/dir')
      ->tag('database')
      ->run();
 
@@ -21,11 +21,12 @@ Class Build
 @package Robo\Task\Docker
 
 * `tag($tag)` 
-* `arg($arg)`  Pass argument to executable
-* `args($args)`  Pass methods parameters as arguments to executable
-* `option($option, $value = null)`  Pass option to executable. Options are prefixed with `--` , value can be provided in second parameter
 * `dir($dir)`  changes working directory of command
 * `printed($arg)`  Should command output be printed
+* `arg($arg)`  Pass argument to executable
+* `args($args)`  Pass methods parameters as arguments to executable
+* `option($option, $value = null)`  Pass option to executable. Options are prefixed with `--` , value can be provided in second parameter.
+* `optionList($option, $value = null)`  Pass multiple options to executable. Value can be a string or array.
 
 ## Commit
 
@@ -39,7 +40,7 @@ $this->taskDockerCommit($containerId)
 
 // alternatively you can take the result from DockerRun task:
 
-$result = $this->taskDockerRun('db)
+$result = $this->taskDockerRun('db')
      ->exec('./prepare_database.sh')
      ->run();
 
@@ -49,11 +50,12 @@ $task->dockerCommit($result)
 ```
 
 * `name($name)` 
-* `arg($arg)`  Pass argument to executable
-* `args($args)`  Pass methods parameters as arguments to executable
-* `option($option, $value = null)`  Pass option to executable. Options are prefixed with `--` , value can be provided in second parameter
 * `dir($dir)`  changes working directory of command
 * `printed($arg)`  Should command output be printed
+* `arg($arg)`  Pass argument to executable
+* `args($args)`  Pass methods parameters as arguments to executable
+* `option($option, $value = null)`  Pass option to executable. Options are prefixed with `--` , value can be provided in second parameter.
+* `optionList($option, $value = null)`  Pass multiple options to executable. Value can be a string or array.
 
 ## Exec
 
@@ -84,11 +86,12 @@ $this->taskDockerExec($test)
 * `detached()` 
 * `interactive()` 
 * `exec($command)` 
-* `arg($arg)`  Pass argument to executable
-* `args($args)`  Pass methods parameters as arguments to executable
-* `option($option, $value = null)`  Pass option to executable. Options are prefixed with `--` , value can be provided in second parameter
 * `dir($dir)`  changes working directory of command
 * `printed($arg)`  Should command output be printed
+* `arg($arg)`  Pass argument to executable
+* `args($args)`  Pass methods parameters as arguments to executable
+* `option($option, $value = null)`  Pass option to executable. Options are prefixed with `--` , value can be provided in second parameter.
+* `optionList($option, $value = null)`  Pass multiple options to executable. Value can be a string or array.
 
 ## Pull
 
@@ -104,11 +107,12 @@ $this->taskDockerPull('wordpress')
 ```
 
 
-* `arg($arg)`  Pass argument to executable
-* `args($args)`  Pass methods parameters as arguments to executable
-* `option($option, $value = null)`  Pass option to executable. Options are prefixed with `--` , value can be provided in second parameter
 * `dir($dir)`  changes working directory of command
 * `printed($arg)`  Should command output be printed
+* `arg($arg)`  Pass argument to executable
+* `args($args)`  Pass methods parameters as arguments to executable
+* `option($option, $value = null)`  Pass option to executable. Options are prefixed with `--` , value can be provided in second parameter.
+* `optionList($option, $value = null)`  Pass multiple options to executable. Value can be a string or array.
 
 ## Remove
 
@@ -123,11 +127,12 @@ $this->taskDockerRemove($container)
 ```
 
 
-* `arg($arg)`  Pass argument to executable
-* `args($args)`  Pass methods parameters as arguments to executable
-* `option($option, $value = null)`  Pass option to executable. Options are prefixed with `--` , value can be provided in second parameter
 * `dir($dir)`  changes working directory of command
 * `printed($arg)`  Should command output be printed
+* `arg($arg)`  Pass argument to executable
+* `args($args)`  Pass methods parameters as arguments to executable
+* `option($option, $value = null)`  Pass option to executable. Options are prefixed with `--` , value can be provided in second parameter.
+* `optionList($option, $value = null)`  Pass multiple options to executable. Value can be a string or array.
 
 
 ## Run
@@ -186,11 +191,12 @@ $this->taskDockerRun('wordpress')
 * `privileged()` 
 * `name($name)` 
 * `link($name, $alias)` 
-* `arg($arg)`  Pass argument to executable
-* `args($args)`  Pass methods parameters as arguments to executable
-* `option($option, $value = null)`  Pass option to executable. Options are prefixed with `--` , value can be provided in second parameter
 * `dir($dir)`  changes working directory of command
 * `printed($arg)`  Should command output be printed
+* `arg($arg)`  Pass argument to executable
+* `args($args)`  Pass methods parameters as arguments to executable
+* `option($option, $value = null)`  Pass option to executable. Options are prefixed with `--` , value can be provided in second parameter.
+* `optionList($option, $value = null)`  Pass multiple options to executable. Value can be a string or array.
 
 ## Start
 
@@ -204,11 +210,12 @@ $this->taskDockerStart($cidOrResult)
 ?>
 ```
 
-* `arg($arg)`  Pass argument to executable
-* `args($args)`  Pass methods parameters as arguments to executable
-* `option($option, $value = null)`  Pass option to executable. Options are prefixed with `--` , value can be provided in second parameter
 * `dir($dir)`  changes working directory of command
 * `printed($arg)`  Should command output be printed
+* `arg($arg)`  Pass argument to executable
+* `args($args)`  Pass methods parameters as arguments to executable
+* `option($option, $value = null)`  Pass option to executable. Options are prefixed with `--` , value can be provided in second parameter.
+* `optionList($option, $value = null)`  Pass multiple options to executable. Value can be a string or array.
 
 ## Stop
 
@@ -222,9 +229,10 @@ $this->taskDockerStop($cidOrResult)
 ?>
 ```
 
-* `arg($arg)`  Pass argument to executable
-* `args($args)`  Pass methods parameters as arguments to executable
-* `option($option, $value = null)`  Pass option to executable. Options are prefixed with `--` , value can be provided in second parameter
 * `dir($dir)`  changes working directory of command
 * `printed($arg)`  Should command output be printed
+* `arg($arg)`  Pass argument to executable
+* `args($args)`  Pass methods parameters as arguments to executable
+* `option($option, $value = null)`  Pass option to executable. Options are prefixed with `--` , value can be provided in second parameter.
+* `optionList($option, $value = null)`  Pass multiple options to executable. Value can be a string or array.
 

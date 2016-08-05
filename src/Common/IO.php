@@ -1,7 +1,7 @@
 <?php
 namespace Robo\Common;
 
-use Robo\Config;
+use Robo\Robo;
 use Symfony\Component\Console\Helper\QuestionHelper;
 use Symfony\Component\Console\Input\ArgvInput;
 use Symfony\Component\Console\Input\InputInterface;
@@ -17,7 +17,10 @@ trait IO
      */
     protected function getOutput()
     {
-        return Config::get('output', new NullOutput());
+        if (!Robo::hasService('output')) {
+            return new NullOutput();
+        }
+        return Robo::output();
     }
 
     /**
@@ -25,19 +28,30 @@ trait IO
      */
     protected function getInput()
     {
-        return new ArgvInput();
+        if (!Robo::hasService('input')) {
+            return new ArgvInput();
+        }
+        return Robo::input();
+    }
+
+    protected function decorationCharacter($nonDecorated, $decorated)
+    {
+        if (!$this->getOutput()->isDecorated() || (strncasecmp(PHP_OS, 'WIN', 3) == 0)) {
+            return $nonDecorated;
+        }
+        return $decorated;
     }
 
     protected function say($text)
     {
-        $char = strncasecmp(PHP_OS, 'WIN', 3) == 0 ? '>' : '➜';
+        $char = $this->decorationCharacter('>', '➜');
         $this->writeln("$char  $text");
     }
 
-    protected function yell($text, $length = 40)
+    protected function yell($text, $length = 40, $color = 'green')
     {
-        $char = strncasecmp(PHP_OS, 'WIN', 3) == 0 ? ' ' : '➜';
-        $format = "$char  <fg=white;bg=green;options=bold>%s</fg=white;bg=green;options=bold>";
+        $char = $this->decorationCharacter(' ', '➜');
+        $format = "$char  <fg=white;bg=$color;options=bold>%s</fg=white;bg=$color;options=bold>";
         $text = str_pad($text, $length, ' ', STR_PAD_BOTH);
         $len = strlen($text) + 2;
         $space = str_repeat(' ', $len);
@@ -53,7 +67,7 @@ trait IO
         }
         return $this->doAsk(new Question($this->formatQuestion($question)));
     }
-    
+
     protected function askHidden($question)
     {
         $question = new Question($this->formatQuestion($question));
@@ -90,5 +104,4 @@ trait IO
     {
         $this->getOutput()->writeln($text);
     }
-
 }

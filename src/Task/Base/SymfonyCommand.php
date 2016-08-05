@@ -2,9 +2,8 @@
 namespace Robo\Task\Base;
 
 use Robo\Result;
-use Robo\Contract\TaskInterface;
 use Robo\Task\BaseTask;
-use \Symfony\Component\Console\Command\Command;
+use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\ArrayInput;
 use Symfony\Component\Console\Input\InputInterface;
 
@@ -28,6 +27,8 @@ use Symfony\Component\Console\Input\InputInterface;
  */
 class SymfonyCommand extends BaseTask
 {
+    use \Robo\Common\IO;
+
     /**
      * @var SymfonyCommand
      */
@@ -58,8 +59,9 @@ class SymfonyCommand extends BaseTask
 
     public function run()
     {
-        $this->printTaskInfo("Running command ".$this->command->getName());
-        return new Result($this,
+        $this->printTaskInfo('Running command {command}', ['command' => $this->command->getName()]);
+        return new Result(
+            $this,
             $this->command->run(new ArrayInput($this->input), $this->getOutput())
         );
     }

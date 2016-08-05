@@ -2,6 +2,7 @@
 namespace Robo\Task\Vcs;
 
 use Robo\Task\CommandStack;
+use Symfony\Component\Process\ProcessUtils;
 
 /**
  * Runs Git commands in stack. You can use `stopOnFail()` to point that stack should be terminated on first fail.
@@ -13,6 +14,8 @@ use Robo\Task\CommandStack;
  *  ->add('-A')
  *  ->commit('adding everything')
  *  ->push('origin','master')
+ *  ->tag('0.6.0')
+ *  ->push('origin','0.6.0')
  *  ->run()
  *
  * $this->taskGitStack()
@@ -64,7 +67,8 @@ class GitStack extends CommandStack
      */
     public function commit($message, $options = "")
     {
-        return $this->exec([__FUNCTION__, "-m '$message'", $options]);
+        $message = ProcessUtils::escapeArgument($message);
+        return $this->exec([__FUNCTION__, "-m $message", $options]);
     }
 
     /**
@@ -92,6 +96,17 @@ class GitStack extends CommandStack
     }
 
     /**
+     * Performs git merge
+     *
+     * @param string $branch
+     * @return $this
+     */
+    public function merge($branch)
+    {
+        return $this->exec([__FUNCTION__, $branch]);
+    }
+
+    /**
      * Executes `git checkout` command
      *
      * @param $branch
@@ -100,6 +115,21 @@ class GitStack extends CommandStack
     public function checkout($branch)
     {
         return $this->exec([__FUNCTION__, $branch]);
+    }
+
+    /**
+     * Executes `git tag` command
+     *
+     * @param $tag_name
+     * @param string $message
+     * @return $this
+     */
+    public function tag($tag_name, $message = "")
+    {
+        if ($message != "") {
+            $message = "-m '$message'";
+        }
+        return $this->exec([__FUNCTION__, $message, $tag_name]);
     }
 
     public function run()

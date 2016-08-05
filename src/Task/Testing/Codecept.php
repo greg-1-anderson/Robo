@@ -34,18 +34,14 @@ class Codecept extends BaseTask implements CommandInterface, PrintedInterface
 
     public function __construct($pathToCodeception = '')
     {
-        if ($pathToCodeception) {
-            $this->command = "$pathToCodeception run";
-        } elseif (file_exists('vendor/bin/codecept')) {
-            $this->command = 'vendor/bin/codecept run';
-            if (defined('PHP_WINDOWS_VERSION_BUILD')) {
-                $this->command = 'call ' . $this->command;
-            }
-        } elseif (file_exists('codecept.phar')) {
-            $this->command = 'php codecept.phar run';
-        } else {
-            throw new TaskException(__CLASS__, "Neither composer nor phar installation of Codeception found");
+        $this->command = $pathToCodeception;
+        if (!$this->command) {
+            $this->command = $this->findExecutable('codecept');
         }
+        if (!$this->command) {
+            throw new TaskException(__CLASS__, "Neither composer nor phar installation of Codeception found.");
+        }
+        $this->command .= ' run';
     }
 
     public function suite($suite)
@@ -74,7 +70,7 @@ class Codecept extends BaseTask implements CommandInterface, PrintedInterface
 
     public function excludeGroup($group)
     {
-        $this->option("exclude-group", $group);
+        $this->option("skip-group", $group);
         return $this;
     }
 
@@ -106,6 +102,7 @@ class Codecept extends BaseTask implements CommandInterface, PrintedInterface
      * Generate html report
      *
      * @param string $dir
+     * @return $this
      */
     public function html($dir = null)
     {
@@ -138,13 +135,14 @@ class Codecept extends BaseTask implements CommandInterface, PrintedInterface
     }
 
     /**
-     * turn on collecting code coverage
+     * collect codecoverage in raw format. You may pass name of cov file to save results
      *
+     * @param string $cov
      * @return $this
      */
-    public function coverage()
+    public function coverage($cov = null)
     {
-        $this->option("coverage");
+        $this->option("coverage", $cov);
         return $this;
     }
 
@@ -205,8 +203,7 @@ class Codecept extends BaseTask implements CommandInterface, PrintedInterface
     public function run()
     {
         $command = $this->getCommand();
-        $this->printTaskInfo('Executing ' . $command);
+        $this->printTaskInfo('Executing {command}', ['command' => $command]);
         return $this->executeCommand($command);
     }
-
 }

@@ -1,7 +1,7 @@
-<?php 
+<?php
 namespace Robo\Task\Docker;
+
 use Robo\Common\ExecOneCommand;
-use Robo\Common\Timer;
 use Robo\Contract\PrintedInterface;
 use Robo\Task\BaseTask;
 
@@ -11,7 +11,9 @@ abstract class Base extends BaseTask implements PrintedInterface
 
     public function run()
     {
-        $this->printTaskInfo("Running <info>".$this->getCommand()."</info>");
+        $this->printTaskInfo('Running {command}', ['command' => $this->getCommand()]);
         return $this->executeCommand($this->getCommand());
     }
-} 
+
+    abstract public function getCommand();
+}

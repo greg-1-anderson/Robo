@@ -22,11 +22,14 @@ if ($this->taskExec('phpunit .')->run()->wasSuccessful()) {
 * `background()`  Executes command in background mode (asynchronously)
 * `timeout($timeout)`  Stop command if it runs longer then $timeout in seconds
 * `idleTimeout($timeout)`  Stops command if it does not output something for a while
-* `arg($arg)`  Pass argument to executable
-* `args($args)`  Pass methods parameters as arguments to executable
-* `option($option, $value = null)`  Pass option to executable. Options are prefixed with `--` , value can be provided in second parameter
+* `env(array $env)`  Sets the environment variables for the command
+* `simulate($context)`  Called in place of `run()` for simulated tasks.
 * `dir($dir)`  changes working directory of command
 * `printed($arg)`  Should command output be printed
+* `arg($arg)`  Pass argument to executable
+* `args($args)`  Pass methods parameters as arguments to executable
+* `option($option, $value = null)`  Pass option to executable. Options are prefixed with `--` , value can be provided in second parameter.
+* `optionList($option, $value = null)`  Pass multiple options to executable. Value can be a string or array.
 
 ## ExecStack
 
@@ -45,12 +48,14 @@ $this->taskExecStack()
 ?>
 ```
 
-* `ExecStack exec(string)` 
-* `ExecStack stopOnFail(string)` 
+* `$this stopOnFail()` 
 
+* `executable($executable)` 
 * `exec($command)` 
-* `printed($arg)`  Should command output be printed
+* `stopOnFail($stopOnFail = null)` 
+* `result($result)` 
 * `dir($dir)`  changes working directory of command
+* `printed($arg)`  Should command output be printed
 
 ## ParallelExec
 
@@ -73,6 +78,8 @@ $this->taskParallelExec()
 
 * `printed($isPrinted = null)` 
 * `process($command)` 
+* `timeout($timeout)` 
+* `idleTimeout($idleTimeout)` 
 
 ## SymfonyCommand
 
@@ -115,5 +122,4 @@ $this->taskWatch()
 ```
 
 * `monitor($paths, $callable)` 
-
 

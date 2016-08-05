@@ -1,5 +1,6 @@
 <?php
-require_once codecept_data_dir() . 'TestedRoboFile.php';
+use Robo\Robo;
+use Symfony\Component\Console\Output\BufferedOutput;
 
 class RunnerTest extends \Codeception\TestCase\Test
 {
@@ -9,93 +10,138 @@ class RunnerTest extends \Codeception\TestCase\Test
     private $runner;
 
     /**
-     * @var \Symfony\Component\Console\Application
+     * @var \CodeGuy
      */
-    private $app;
+    protected $guy;
 
-    const ROBOFILE = 'TestedRoboFile';
-
-    protected function _before()
+    public function _before()
     {
         $this->runner = new \Robo\Runner();
-        $this->app = $this->runner->createApplication(self::ROBOFILE);
     }
 
-    public function testAllowEmptyValuesAsDefaultsToOptionalOptions()
+    public function testHandleError()
     {
-        $command = $this->createCommand('hello');
+        $tmpLevel = error_reporting();
 
-        $yell = $command->getDefinition()->getOption('yell');
+        $this->assertFalse($this->runner->handleError());
+        error_reporting(0);
+        $this->assertTrue($this->runner->handleError());
 
-        verify($yell->isValueOptional())
-            ->equals(false);
-        verify($yell->getDefault())
-            ->equals(false);
-
-        $to = $command->getDefinition()->getOption('to');
-
-        verify($to->isValueOptional())
-            ->equals(true);
-        verify($to->getDefault())
-            ->equals(null);
+        error_reporting($tmpLevel);
     }
 
-    public function testCommandDocumentation()
+    public function testErrorIsHandled()
     {
-        $command = $this->createCommand('fibonacci');
+        $tmpLevel = error_reporting();
 
-        verify($command->getDescription())
-            ->equals('Calculate the fibonacci sequence between two numbers.');
+        // Set error_get_last to a known state.  Note that it can never be
+        // reset; see http://php.net/manual/en/function.error-get-last.php
+        @trigger_error('control');
+        $error_description = error_get_last();
+        $this->assertEquals('control', $error_description['message']);
+        @trigger_error('');
+        $error_description = error_get_last();
+        $this->assertEquals('', $error_description['message']);
+
+        // Set error_reporting to a non-zero value.  In this instance,
+        // 'trigger_error' would abort our test script, so we use
+        // @trigger_error so that execution will continue.  With our
+        // error handler in place, the value of error_get_last() does
+        // not change.
+        error_reporting(E_USER_ERROR);
+        set_error_handler(array($this->runner, 'handleError'));
+        @trigger_error('test error', E_USER_ERROR);
+        $error_description = error_get_last();
+        $this->assertEquals('', $error_description['message']);
+
+        // Set error_reporting to zero.  Now, even 'trigger_error'
+        // does not abort execution.  The value of error_get_last()
+        // still does not change.
+        error_reporting(0);
+        trigger_error('test error 2', E_USER_ERROR);
+        $error_description = error_get_last();
+        $this->assertEquals('', $error_description['message']);
+
+        error_reporting($tmpLevel);
     }
 
-    public function testCommandCompactDocumentation()
+    public function testThrowsExceptionWhenNoContainerAvailable()
     {
-        $command = $this->createCommand('compact');
-
-        verify($command->getDescription())
-            ->equals('Compact doc comment');
+        \PHPUnit_Framework_TestCase::setExpectedExceptionRegExp(
+            '\RuntimeException',
+            '/container is not initialized yet.*/'
+        );
+        Robo::unsetContainer();
+        Robo::getContainer();
     }
 
-    public function testCommandArgumentDocumentation()
+    public function testRunnerNoSuchCommand()
     {
-        $command = $this->createCommand('fibonacci');
-
-        $start = $command->getDefinition()->getArgument('start');
-
-        verify($start->getDescription())
-            ->equals('Number to start from');
-
-        $steps = $command->getDefinition()->getArgument('steps');
-
-        verify($steps->getDescription())
-            ->equals('Number of steps to perform');
+        $argv = ['placeholder', 'no-such-command'];
+        $this->runner->execute($argv);
+        $this->guy->seeInOutput('Command "no-such-command" is not defined.');
     }
 
-    public function testCommandOptionDocumentation()
+    public function testRunnerList()
     {
-        $command = $this->createCommand('fibonacci');
-
-        $graphic = $command->getDefinition()->getOption('graphic');
-
-        verify($graphic->getDescription())
-            ->equals('Display the sequence graphically using cube representation');
+        $argv = ['placeholder', 'list'];
+        $this->runner->execute($argv);
+        $this->guy->seeInOutput('try:array-args');
     }
 
-    public function testCommandHelpDocumentation()
+    public function testRunnerTryArgs()
     {
-        $command = $this->createCommand('fibonacci');
+        $argv = ['placeholder', 'try:array-args', 'a', 'b', 'c'];
+        $this->runner->execute($argv);
 
-        verify($command->getHelp())
-            ->contains('    +----+---+');
+        $expected = <<<EOT
+>  The parameters passed are:
+array (
+  0 => 'a',
+  1 => 'b',
+  2 => 'c',
+)
+
+EOT;
+        $this->guy->seeOutputEquals($expected);
     }
 
-    public function testCommandNaming()
+    public function testRunnerTryError()
     {
-        $this->assertNotNull($this->app->find('generate:user-avatar'));
+        $container = \Robo\Robo::getContainer();
+        $container->addServiceProvider(\Robo\Task\Base\loadTasks::getBaseServices());
+
+        $argv = ['placeholder', 'try:error'];
+        $result = $this->runner->execute($argv);
+
+        $this->guy->seeInOutput('[Exec] Running ls xyzzy');
+        $this->assertTrue($result > 0);
     }
 
-    protected function createCommand($name)
+    public function testRunnerTryException()
     {
-        return $this->runner->createCommand(new \Robo\TaskInfo(self::ROBOFILE, $name));
+        $container = \Robo\Robo::getContainer();
+        $container->addServiceProvider(\Robo\Task\Base\loadTasks::getBaseServices());
+
+        $argv = ['placeholder', 'try:exception', '--task'];
+        $result = $this->runner->execute($argv);
+
+        $this->guy->seeInOutput('Task failed with an exception');
+        $this->assertEquals(1, $result);
+    }
+
+    public function testInitCommand()
+    {
+        $container = \Robo\Robo::getContainer();
+        $app = $container->get('application');
+        $app->addInitRoboFileCommand('testRoboFile', 'RoboTestClass');
+
+        $argv = ['placeholder', 'init'];
+        $this->runner->execute($argv);
+
+        $this->assertTrue(file_exists('testRoboFile'));
+        $commandContents = file_get_contents('testRoboFile');
+        unlink('testRoboFile');
+        $this->assertContains('class RoboTestClass', $commandContents);
     }
 }

@@ -10,6 +10,7 @@ $this->taskRsync()
   ->toHost('localhost')
   ->toUser('dev')
   ->toPath('/var/www/html/app/')
+  ->remoteShell('ssh -i public_key')
   ->recursive()
   ->excludeVcs()
   ->checksum()
@@ -46,6 +47,10 @@ if ('y' === $this->ask('Do you want to run (y/n)')) {
 
 * `fromPath($path)`  This can either be a full rsync path spec (user@host:path) or just a path.
 * `toPath($path)`  This can either be a full rsync path spec (user@host:path) or just a path.
+* `fromUser($fromUser)` 
+* `fromHost($fromHost)` 
+* `toUser($toUser)` 
+* `toHost($toHost)` 
 * `progress()` 
 * `stats()` 
 * `recursive()` 
@@ -62,15 +67,19 @@ if ('y' === $this->ask('Do you want to run (y/n)')) {
 * `wholeFile()` 
 * `dryRun()` 
 * `itemizeChanges()` 
-* `excludeVcs()`  Excludes .git/, .svn/ and .hg/ folders.
+* `excludeVcs()`  Excludes .git, .svn and .hg items at any depth.
 * `exclude($pattern)` 
 * `excludeFrom($file)` 
+* `includeFilter($pattern)` 
+* `filter($pattern)` 
 * `filesFrom($file)` 
-* `arg($arg)`  Pass argument to executable
-* `args($args)`  Pass methods parameters as arguments to executable
-* `option($option, $value = null)`  Pass option to executable. Options are prefixed with `--` , value can be provided in second parameter
+* `remoteShell($command)` 
 * `dir($dir)`  changes working directory of command
 * `printed($arg)`  Should command output be printed
+* `arg($arg)`  Pass argument to executable
+* `args($args)`  Pass methods parameters as arguments to executable
+* `option($option, $value = null)`  Pass option to executable. Options are prefixed with `--` , value can be provided in second parameter.
+* `optionList($option, $value = null)`  Pass multiple options to executable. Value can be a string or array.
 
 ## Ssh
 
@@ -78,11 +87,11 @@ if ('y' === $this->ask('Do you want to run (y/n)')) {
 Runs multiple commands on a remote server.
 Per default, commands are combined with &&, unless stopOnFail is false.
 
-``` php
+```php
 <?php
 
-$this->taskSsh('remote.example.com', 'user')
-    ->exec('cd /var/www/html')
+$this->taskSshExec('remote.example.com', 'user')
+    ->remoteDir('/var/www/html')
     ->exec('ls -la')
     ->exec('chmod g+x logs')
     ->run();
@@ -91,26 +100,41 @@ $this->taskSsh('remote.example.com', 'user')
 
 You can even exec other tasks (which implement CommandInterface):
 
-``` php
+```php
 $gitTask = $this->taskGitStack()
     ->checkout('master')
     ->pull();
 
-$this->taskSsh('remote.example.com')
-    ->exec('cd /var/www/html/site')
+$this->taskSshExec('remote.example.com')
+    ->remoteDir('/var/www/html/site')
     ->exec($gitTask)
     ->run();
 ```
 
+You can configure the remote directory for all future calls:
+
+```php
+::configure('remoteDir', '/some-dir');
+```
+
+* `$this stopOnFail(bool $stopOnFail)`  Whether or not to chain commands together with &&
+                                           and stop the chain if one command fails
+* `$this remoteDir(string $remoteWorkingDirectory)`  Changes to the given directory before running commands
+
+* `hostname($hostname)` 
+* `user($user)` 
+* `stopOnFail($stopOnFail = null)` 
+* `remoteDir($remoteDir)` 
 * `identityFile($filename)` 
 * `port($port)` 
 * `forcePseudoTty()` 
 * `quiet()` 
 * `verbose()` 
 * `exec($command)`   * `param string|CommandInterface` $command
-* `arg($arg)`  Pass argument to executable
-* `args($args)`  Pass methods parameters as arguments to executable
-* `option($option, $value = null)`  Pass option to executable. Options are prefixed with `--` , value can be provided in second parameter
 * `dir($dir)`  changes working directory of command
 * `printed($arg)`  Should command output be printed
+* `arg($arg)`  Pass argument to executable
+* `args($args)`  Pass methods parameters as arguments to executable
+* `option($option, $value = null)`  Pass option to executable. Options are prefixed with `--` , value can be provided in second parameter.
+* `optionList($option, $value = null)`  Pass multiple options to executable. Value can be a string or array.
 

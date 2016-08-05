@@ -5,14 +5,12 @@ namespace Robo\Task;
 use Robo\Common\ExecCommand;
 use Robo\Contract\PrintedInterface;
 use Robo\Result;
-use Robo\Task\Exec;
 use Robo\Contract\CommandInterface;
 use Robo\Common\DynamicParams;
 use Robo\Exception\TaskException;
 
 abstract class CommandStack extends BaseTask implements CommandInterface, PrintedInterface
 {
-    use DynamicParams;
     use ExecCommand;
 
     protected $executable;
@@ -20,14 +18,15 @@ abstract class CommandStack extends BaseTask implements CommandInterface, Printe
     protected $exec = [];
     protected $stopOnFail = false;
 
-    public function getPrinted()
-    {
-        return $this->isPrinted;
-    }
-
     public function getCommand()
     {
         return implode(' && ', $this->exec);
+    }
+
+    public function executable($executable)
+    {
+        $this->executable = $executable;
+        return $this;
     }
 
     public function exec($command)
@@ -41,31 +40,17 @@ abstract class CommandStack extends BaseTask implements CommandInterface, Printe
         return $this;
     }
 
-    /**
-     * Should command output be printed
-     *
-     * @param $arg
-     * @return $this
-     */
-    public function printed($arg)
+    public function stopOnFail($stopOnFail = true)
     {
-        if (is_bool($arg)) {
-            $this->isPrinted = $arg;
-        }
+        $this->stopOnFail = $stopOnFail;
         return $this;
     }
 
-    /**
-     * changes working directory of command
-     * @param $dir
-     * @return $this
-     */
-    public function dir($dir)
+    public function result($result)
     {
-        $this->workingDirectory = $dir;
+        $this->result = $result;
         return $this;
     }
-
 
     protected function stripExecutableFromCommand($command)
     {
@@ -83,10 +68,12 @@ abstract class CommandStack extends BaseTask implements CommandInterface, Printe
             throw new TaskException($this, 'You must add at least one command');
         }
         if (!$this->stopOnFail) {
+            $this->printTaskInfo('{command}', ['command' => $this->getCommand()]);
             return $this->executeCommand($this->getCommand());
         }
 
         foreach ($this->exec as $command) {
+            $this->printTaskInfo("Executing {command}", ['command' => $command]);
             $result = $this->executeCommand($command);
             if (!$result->wasSuccessful()) {
                 return $result;

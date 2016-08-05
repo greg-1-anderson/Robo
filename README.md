@@ -1,18 +1,16 @@
 # RoboTask
 
-[![Gitter](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/Codegyre/Robo?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
+**Modern and simple PHP task runner** inspired by Gulp and Rake aimed to automate common tasks:
 
-**Modern and simple PHP task runner** inspired by Grunt and Rake aimed to automate common tasks:
+[![Gitter](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/consolidation-org/Robo?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge) [![Build Status](https://travis-ci.org/consolidation-org/Robo.svg?branch=master)](https://travis-ci.org/consolidation-org/Robo) [![Latest Stable Version](https://poser.pugx.org/consolidation/robo/v/stable.png)](https://packagist.org/packages/consolidation/robo) [![Total Downloads](https://poser.pugx.org/consolidation/robo/downloads.png)](https://packagist.org/packages/consolidation/robo) [![Latest Unstable Version](https://poser.pugx.org/consolidation/robo/v/unstable.png)](https://packagist.org/packages/consolidation/robo) [![License](https://poser.pugx.org/consolidation/robo/license.png)](https://packagist.org/packages/consolidation/robo)
+[![PHP 7 ready](http://php7ready.timesplinter.ch/consolidation-org/Robo/badge.svg)](https://travis-ci.org/consolidation-org/Robo)
 
-[![Build Status](https://travis-ci.org/Codegyre/Robo.svg?branch=master)](https://travis-ci.org/Codegyre/Robo) [![Latest Stable Version](https://poser.pugx.org/codegyre/robo/v/stable.png)](https://packagist.org/packages/codegyre/robo) [![Total Downloads](https://poser.pugx.org/codegyre/robo/downloads.png)](https://packagist.org/packages/codegyre/robo) [![Latest Unstable Version](https://poser.pugx.org/codegyre/robo/v/unstable.png)](https://packagist.org/packages/codegyre/robo) [![License](https://poser.pugx.org/codegyre/robo/license.png)](https://packagist.org/packages/codegyre/robo)
-
-* executing daemons (and workers)
-* performing cleanups
-* watching filesystem changes
-* running multiple Symfony / Artisan Commands
-* starting PHP server
-* running tests
 * writing cross-platform scripts
+* processing assets (less, sass, minification)
+* running tests
+* executing daemons (and workers)
+* watching filesystem changes
+* deployment with sftp/ssh/docker
 
 ## Installing
 
@@ -27,15 +25,14 @@ wget http://robo.li/robo.phar
 To install globally put `robo.phar` in `/usr/bin`.
 
 ```
-sudo chmod +x robo.phar && mv robo.phar /usr/bin/robo
+chmod +x robo.phar && sudo mv robo.phar /usr/bin/robo
 ```
 
 Now you can use it just like `robo`.
 
 ### Composer
 
-* Add `"codegyre/robo": "*"` to `composer.json`.
-* Run `composer install`
+* Run `composer require consolidation/robo:~1`
 * Use `vendor/bin/robo` to execute Robo tasks.
 
 ## Usage
@@ -45,7 +42,7 @@ All protected methods in traits that start with `task` prefix are tasks and can 
 
 ## Examples
 
-The best way to learn Robo by example is to take a look into [its own RoboFile](https://github.com/Codegyre/Robo/blob/master/RoboFile.php)
+The best way to learn Robo by example is to take a look into [its own RoboFile](https://github.com/consolidation-org/Robo/blob/master/RoboFile.php)
  or [RoboFile of Codeception project](https://github.com/Codeception/Codeception/blob/master/RoboFile.php)
 
 Here are some snippets from them:
@@ -70,7 +67,7 @@ class RoboFile extends \Robo\Tasks
             ->run();
 
        // running Selenium server in background
-        $this->taskExec('java -jar '.$pathToSelenium)
+        $this->taskExec('java -jar ' . $seleniumPath)
             ->background()
             ->run();
 
@@ -95,7 +92,6 @@ Using `watch` task so you can use it for running tests or building assets.
 ``` php
 <?php
 class RoboFile extends \Robo\Tasks {
-    use \Robo\Task\Watch;
 
     function watchComposer()
     {
@@ -158,66 +154,16 @@ function buildPhar()
 
 ---
 
-Publishing New Release of Robo
-
-``` php
-<?php
-    public function release()
-    {
-        $this->say("Releasing Robo");
-
-        $changelog = $this->taskChangelog()
-            ->version(\Robo\Runner::VERSION)
-            ->askForChanges()
-            ->run();
-
-        if (!$changelog->wasSuccessful()) return false;
-
-        $this->taskGit()
-            ->add('CHANGELOG.md')
-            ->commit('updated changelog')
-            ->push()
-            ->run();
-
-        $this->taskGitHubRelease(\Robo\Runner::VERSION)
-            ->uri('Codegyre/Robo')
-            ->askDescription()
-            ->changes($changelog->getData())
-            ->run();
-    }
-}
-?>
-```
-
-To create new release we run:
-
-```
-✗ ./robo release
-➜  Releasing Robo
-?  Changed in this release:Mered Tasks and Traits to same file
-?  Changed in this release:Added Watcher task
-?  Changed in this release:Added GitHubRelease task
-?  Changed in this release:Added Changelog task
-?  Changed in this release:Added ReplaceInFile task
-?  Changed in this release:
- [Robo\Task\ChangelogTask] Creating CHANGELOG.md
- [Robo\Task\ReplaceInFileTask] CHANGELOG.md updated
- [Robo\Task\ExecTask] running git add CHANGELOG.md
- [Robo\Task\ExecTask] running git commit -m "updated changelog"
- [Robo\Task\GitHubReleaseTask] {"url":"https://api.github.com/repo...
-```
-
 ## We need more tasks!
 
 Create your own tasks and send them as Pull Requests or create packages prefixed with `robo-` on Packagist.
 
-## Concepts
-
-Tasks are classes that implement `Robo\TaskInterface` with method `run` defined. Each other method of task should be used for specifying task options and returns `$this` for fluent interface:
-
-Tasks are included into RoboFile with traits. Traits should contain protected methods with `task` prefix that return a new instance of a task.
-
 ## Credits
 
-Robo was created by Michael Bodnarchuk [@davert](http://twitter.com/davert) for purposes of [Codeception project](http://codeception.com).
-For updated please should follow [@davert](http://twitter.com/codeception). And yes, license is MIT.
+Follow [@robo_php](http://twitter.com/robo_php) for updates.
+
+Created by Michael Bodnarchuk [@davert](http://twitter.com/davert).
+
+## License
+
+MIT

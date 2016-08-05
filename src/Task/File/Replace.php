@@ -23,17 +23,20 @@ use Robo\Task\BaseTask;
  *  ->regex('~^service:~')
  *  ->to('services:')
  *  ->run();
+ *
+ * $this->taskReplaceInFile('box/robo.txt')
+ *  ->from(array('##dbname##', '##dbhost##'))
+ *  ->to(array('robo', 'localhost'))
+ *  ->run();
  * ?>
  * ```
  *
  * @method regex(string) regex to match string to be replaced
- * @method from(string) string to be replaced
- * @method to(string) value to be set as a replacement
+ * @method from(string|array) string(s) to be replaced
+ * @method to(string|array) value(s) to be set as a replacement
  */
 class Replace extends BaseTask
 {
-    use \Robo\Common\DynamicParams;
-
     protected $filename;
     protected $from;
     protected $to;
@@ -44,10 +47,34 @@ class Replace extends BaseTask
         $this->filename = $filename;
     }
 
-    function run()
+    public function filename($filename)
+    {
+        $this->filename = $filename;
+        return $this;
+    }
+
+    public function from($from)
+    {
+        $this->from = $from;
+        return $this;
+    }
+
+    public function to($to)
+    {
+        $this->to = $to;
+        return $this;
+    }
+
+    public function regex($regex)
+    {
+        $this->regex = $regex;
+        return $this;
+    }
+
+    public function run()
     {
         if (!file_exists($this->filename)) {
-            $this->printTaskError("File {$this->filename} does not exist");
+            $this->printTaskError('File {filename} does not exist', ['filename' => $this->filename]);
             return false;
         }
 
@@ -57,11 +84,15 @@ class Replace extends BaseTask
         } else {
             $text = str_replace($this->from, $this->to, $text, $count);
         }
-        $res = file_put_contents($this->filename, $text);
-        if ($res === false) {
-            return Result::error($this, "Error writing to file {$this->filename}.");
+        if ($count > 0) {
+            $res = file_put_contents($this->filename, $text);
+            if ($res === false) {
+                return Result::error($this, "Error writing to file {filename}.", ['filename' => $this->filename]);
+            }
+            $this->printTaskSuccess("{filename} updated. {count} items replaced", ['filename' => $this->filename, 'count' => $count]);
+        } else {
+            $this->printTaskInfo("{filename} unchanged. {count} items replaced", ['filename' => $this->filename, 'count' => $count]);
         }
-        $this->printTaskSuccess("<info>{$this->filename}</info> updated. $count items replaced");
         return Result::success($this, '', ['replaced' => $count]);
     }
 }

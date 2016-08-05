@@ -8,7 +8,7 @@ namespace Robo\Task\Docker;
  * <?php
  * $this->taskDockerBuild()->run();
  *
- * $this->dockerBuild('path/to/dir')
+ * $this->taskDockerBuild('path/to/dir')
  *      ->tag('database')
  *      ->run();
  *
@@ -38,5 +38,4 @@ class Build extends Base
     {
         return $this->option('-t', $tag);
     }
-
 }

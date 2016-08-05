@@ -4,6 +4,7 @@ namespace Robo\Task\Gulp;
 
 use Robo\Task\BaseTask;
 use Robo\Exception\TaskException;
+use Symfony\Component\Process\ProcessUtils;
 
 abstract class Base extends BaseTask
 {
@@ -60,19 +61,17 @@ abstract class Base extends BaseTask
     public function __construct($task, $pathToGulp = null)
     {
         $this->task = $task;
-        if ($pathToGulp) {
-            $this->command = $pathToGulp;
-        } elseif (is_executable('/usr/bin/gulp')) {
-            $this->command = '/usr/bin/gulp';
-        } elseif (is_executable('/usr/local/bin/gulp')) {
-            $this->command = '/usr/local/bin/gulp';
-        } else {
-            throw new TaskException(__CLASS__, "Executable not found.");
+        $this->command = $pathToGulp;
+        if (!$this->command) {
+            $this->command = $this->findExecutable('gulp');
+        }
+        if (!$this->command) {
+            throw new TaskException(__CLASS__, "Gulp executable not found.");
         }
     }
 
     public function getCommand()
     {
-        return "{$this->command} " . escapeshellarg($this->task) . "{$this->arguments}";
+        return "{$this->command} " . ProcessUtils::escapeArgument($this->task) . "{$this->arguments}";
     }
 }

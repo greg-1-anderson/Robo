@@ -1,13 +1,13 @@
 <?php
-
 namespace Robo\Task\ApiGen;
 
 use Robo\Contract\CommandInterface;
 use Robo\Exception\TaskException;
 use Robo\Task\BaseTask;
+use Traversable;
 
 /**
- * Executes ApiGen command to generate documentation 
+ * Executes ApiGen command to generate documentation
  *
  * ``` php
  * <?php
@@ -30,24 +30,18 @@ class ApiGen extends BaseTask implements CommandInterface
 
     public function __construct($pathToApiGen = null)
     {
-        if ($pathToApiGen) {
-            $this->command = $pathToApiGen;
-        } elseif (file_exists('vendor/bin/apigen')) {
-            $this->command = 'vendor/bin/apigen';
-        } elseif (file_exists('apigen.phar')) {
-            $this->command = 'php apigen.phar';
-        } elseif (file_exists('/usr/bin/apigen')) {
-            $this->command = '/usr/bin/apigen';
-        } elseif (file_exists('~/.composer/vendor/bin/apigen')) {
-            $this->command = '~/.composer/vendor/bin/apigen';
-        } else {
+        $this->command = $pathToApiGen;
+        if (!$this->command) {
+            $this->command = $this->findExecutablePhar('apigen');
+        }
+        if (!$this->command) {
             throw new TaskException(__CLASS__, "No apigen installation found");
         }
     }
 
     /**
-     * @param array|Traversable|string $arg a single object or something traversable 
-     * @return array|Traversable the provided argument if it was already traversable, or the given 
+     * @param array|Traversable|string $arg a single object or something traversable
+     * @return array|Traversable the provided argument if it was already traversable, or the given
      *                           argument returned as a one-element array
      */
     protected static function forceTraversable($arg)
@@ -61,7 +55,7 @@ class ApiGen extends BaseTask implements CommandInterface
 
     /**
      * @param array|string $arg a single argument or an array of multiple string values
-     * @return string a comma-separated string of all of the provided arguments, suitable 
+     * @return string a comma-separated string of all of the provided arguments, suitable
      *                as a command-line "list" type argument for ApiGen
      */
     protected static function asList($arg)
@@ -73,19 +67,31 @@ class ApiGen extends BaseTask implements CommandInterface
     /**
      * @param boolean|string $val an argument to be normalized
      * @param string $default one of self::BOOL_YES or self::BOOK_NO if the provided
-     *               value could not deterministically be converted to a 
+     *               value could not deterministically be converted to a
      *               yes or no value
      * @return string the given value as a command-line "yes|no" type of argument for ApiGen,
      *                or the default value if none could be determined
      */
     protected static function asTextBool($val, $default)
     {
-        if ($val === self::BOOL_YES || $val === self::BOOL_NO) return $val;
-        if (!$val) return self::BOOL_NO;
-        if ($val === true) return self::BOOL_YES;
-        if (is_numeric($val) && $val != 0) return self::BOOL_YES;
-        if (strcasecmp($val[0], 'y') === 0) return self::BOOL_YES;
-        if (strcasecmp($val[0], 'n') === 0) return self::BOOL_NO;
+        if ($val === self::BOOL_YES || $val === self::BOOL_NO) {
+            return $val;
+        }
+        if (!$val) {
+            return self::BOOL_NO;
+        }
+        if ($val === true) {
+            return self::BOOL_YES;
+        }
+        if (is_numeric($val) && $val != 0) {
+            return self::BOOL_YES;
+        }
+        if (strcasecmp($val[0], 'y') === 0) {
+            return self::BOOL_YES;
+        }
+        if (strcasecmp($val[0], 'n') === 0) {
+            return self::BOOL_NO;
+        }
         // meh, good enough, let apigen sort it out
         return $default;
     }
@@ -98,6 +104,8 @@ class ApiGen extends BaseTask implements CommandInterface
 
     /**
      * @param array|string|Traversable $src one or more source values
+     *
+     * @return $this
      */
     public function source($src)
     {
@@ -115,6 +123,8 @@ class ApiGen extends BaseTask implements CommandInterface
 
     /**
      * @param array|string $exts one or more extensions
+     *
+     * @return $this
      */
     public function extensions($exts)
     {
@@ -124,6 +134,8 @@ class ApiGen extends BaseTask implements CommandInterface
 
     /**
      * @param array|string $exclude one or more exclusions
+     *
+     * @return $this
      */
     public function exclude($exclude)
     {
@@ -134,7 +146,9 @@ class ApiGen extends BaseTask implements CommandInterface
     }
 
     /**
-     * @param array|string|Traversable $exts one or more skip-doc-path values
+     * @param array|string|Traversable $path one or more skip-doc-path values
+     *
+     * @return $this
      */
     public function skipDocPath($path)
     {
@@ -146,6 +160,8 @@ class ApiGen extends BaseTask implements CommandInterface
 
     /**
      * @param array|string|Traversable $prefix one or more skip-doc-prefix values
+     *
+     * @return $this
      */
     public function skipDocPrefix($prefix)
     {
@@ -157,6 +173,8 @@ class ApiGen extends BaseTask implements CommandInterface
 
     /**
      * @param array|string $charset one or more charsets
+     *
+     * @return $this
      */
     public function charset($charset)
     {
@@ -202,6 +220,8 @@ class ApiGen extends BaseTask implements CommandInterface
 
     /**
      * @param array|string $tags one or more supported html tags
+     *
+     * @return $this
      */
     public function allowedHtml($tags)
     {
@@ -216,7 +236,9 @@ class ApiGen extends BaseTask implements CommandInterface
     }
 
     /**
-     * @param array|string $types or more supported autocomple types
+     * @param array|string $types or more supported autocomplete types
+     *
+     * @return $this
      */
     public function autocomplete($types)
     {
@@ -225,7 +247,9 @@ class ApiGen extends BaseTask implements CommandInterface
     }
 
     /**
-     * @param array|string $levels one or more access levels 
+     * @param array|string $levels one or more access levels
+     *
+     * @return $this
      */
     public function accessLevels($levels)
     {
@@ -235,6 +259,8 @@ class ApiGen extends BaseTask implements CommandInterface
 
     /**
      * @param boolean|string $internal 'yes' or true if internal, 'no' or false if not
+     *
+     * @return $this
      */
     public function internal($internal)
     {
@@ -245,6 +271,8 @@ class ApiGen extends BaseTask implements CommandInterface
     /**
      * @param boolean|string $php 'yes' or true to generate documentation for internal php classes,
      *                            'no' or false otherwise
+     *
+     * @return $this
      */
     public function php($php)
     {
@@ -254,6 +282,8 @@ class ApiGen extends BaseTask implements CommandInterface
 
     /**
      * @param boolean|string $tree 'yes' or true to generate a tree view of classes, 'no' or false otherwise
+     *
+     * @return $this
      */
     public function tree($tree)
     {
@@ -263,6 +293,8 @@ class ApiGen extends BaseTask implements CommandInterface
 
     /**
      * @param boolean|string $dep 'yes' or true to generate documentation for deprecated classes, 'no' or false otherwise
+     *
+     * @return $this
      */
     public function deprecated($dep)
     {
@@ -272,6 +304,8 @@ class ApiGen extends BaseTask implements CommandInterface
 
     /**
      * @param boolean|string $todo 'yes' or true to document tasks, 'no' or false otherwise
+     *
+     * @return $this
      */
     public function todo($todo)
     {
@@ -281,6 +315,8 @@ class ApiGen extends BaseTask implements CommandInterface
 
     /**
      * @param boolean|string $src 'yes' or true to generate highlighted source code, 'no' or false otherwise
+     *
+     * @return $this
      */
     public function sourceCode($src)
     {
@@ -290,6 +326,8 @@ class ApiGen extends BaseTask implements CommandInterface
 
     /**
      * @param boolean|string $zipped 'yes' or true to generate downloadable documentation, 'no' or false otherwise
+     *
+     * @return $this
      */
     public function download($zipped)
     {
@@ -305,6 +343,8 @@ class ApiGen extends BaseTask implements CommandInterface
 
     /**
      * @param boolean|string $wipeout 'yes' or true to clear out the destination directory, 'no' or false otherwise
+     *
+     * @return $this
      */
     public function wipeout($wipeout)
     {
@@ -314,6 +354,8 @@ class ApiGen extends BaseTask implements CommandInterface
 
     /**
      * @param boolean|string $quiet 'yes' or true for quiet, 'no' or false otherwise
+     *
+     * @return $this
      */
     public function quiet($quiet)
     {
@@ -323,6 +365,8 @@ class ApiGen extends BaseTask implements CommandInterface
 
     /**
      * @param boolean|string $bar 'yes' or true to display a progress bar, 'no' or false otherwise
+     *
+     * @return $this
      */
     public function progressbar($bar)
     {
@@ -332,6 +376,8 @@ class ApiGen extends BaseTask implements CommandInterface
 
     /**
      * @param boolean|string $colors 'yes' or true colorize the output, 'no' or false otherwise
+     *
+     * @return $this
      */
     public function colors($colors)
     {
@@ -341,6 +387,8 @@ class ApiGen extends BaseTask implements CommandInterface
 
     /**
      * @param boolean|string $check 'yes' or true to check for updates, 'no' or false otherwise
+     *
+     * @return $this
      */
     public function updateCheck($check)
     {
@@ -350,6 +398,8 @@ class ApiGen extends BaseTask implements CommandInterface
 
     /**
      * @param boolean|string $debug 'yes' or true to enable debug mode, 'no' or false otherwise
+     *
+     * @return $this
      */
     public function debug($debug)
     {
@@ -364,8 +414,7 @@ class ApiGen extends BaseTask implements CommandInterface
 
     public function run()
     {
-        $this->printTaskInfo('Running ApiGen '. $this->arguments);
+        $this->printTaskInfo('Running ApiGen {args}', ['args' => $this->arguments]);
         return $this->executeCommand($this->getCommand());
     }
-
 }

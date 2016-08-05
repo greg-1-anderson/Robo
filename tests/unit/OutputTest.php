@@ -32,15 +32,14 @@ class OutputTest extends \Codeception\TestCase\Test
     public function testSay()
     {
         $this->say('Hello, world!');
-        $char = strncasecmp(PHP_OS, 'WIN', 3) == 0 ? '>' : '➜';
-        $this->guy->seeInOutput($char . '  Hello, world!');
+        $this->guy->seeInOutput('>  Hello, world!');
     }
 
     public function testAskReply()
     {
         $this->expectedAnswer = 'jon';
         verify($this->ask('What is your name?'))->equals('jon');
-        $this->guy->seeOutputEquals('<question>?  What is your name?</question> ');
+        $this->guy->seeOutputEquals('?  What is your name? ');
     }
     public function testAskMethod()
     {
