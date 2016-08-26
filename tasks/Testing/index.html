@@ -240,7 +240,7 @@
 <p>Runs <a href="http://atoum.org/">atoum</a> tests</p>
 <pre><code class="php">&lt;?php
 $this-&gt;taskAtoum()
- -&gt;file('path/to/test.php')
+ -&gt;files('path/to/test.php')
  -&gt;configFile('config/dev.php')
  -&gt;run()
 
@@ -254,7 +254,7 @@ $this-&gt;taskAtoum()
 <li><code>bootstrap($file)</code>  Path to the bootstrap file.</li>
 <li><code>configFile($file)</code>  Path to the config file.</li>
 <li><code>debug()</code>  Use atoum's debug mode.</li>
-<li><code>files($files)</code>  Test file ou test files to run.</li>
+<li><code>files($files)</code>  Test file or test files to run.</li>
 <li><code>directories($directories)</code>  Test directory or directories to run.</li>
 <li><code>dir($dir)</code>  changes working directory of command</li>
 <li><code>printed($arg)</code>  Should command output be printed</li>

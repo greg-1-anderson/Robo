@@ -220,7 +220,7 @@
                 <div class="col-md-3"><div class="bs-sidebar hidden-print affix well" role="complementary">
     <ul class="nav bs-sidenav">
     
-        <li class="main active"><a href="#collections-and-builders">Collections and Builders</a></li>
+        <li class="main active"><a href="#collection-builders">Collection Builders</a></li>
         
             <li><a href="#collections-api">Collections API</a></li>
         
@@ -237,7 +237,7 @@
 </div></div>
                 <div class="col-md-9" role="main">
 
-<h1 id="collections-and-builders">Collections and Builders</h1>
+<h1 id="collection-builders">Collection Builders</h1>
 <p>Robo provides task collections as a means of making error detection and recovery easier. When Robo tasks are added to a collection, their execution is deferred until the <code>$collection-&gt;run()</code> method is called.  If one of the tasks fail, then the operation will be aborted; rollback tasks may also be defined to restore the system to its original condition.</p>
 <p>When using collections, a Robo script will go through three phases:</p>
 <ol>
@@ -290,8 +290,8 @@
 </code></pre>
 
 <h2 id="using-a-collection-builder">Using a Collection Builder</h2>
-<p>The easiest way to manage a collection of tasks is to use a collection builder. Collection builders allow tasks to be created via chained methods.  All of the tasks created by the same builder are added to a collection; when the <code>run()</code> method is called, all of the tasks in the collection run. </p>
-<p>Collection builders provide all of the capabilities of collections with a cleaner API.  The 'publish' command from Robo's own RoboFile is shown below.  It uses a collection builder to run some git and filesystem operations. The "completion" tasks are run after all other tasks complete, or during rollback processing when an operation fails.</p>
+<p>To manage a collection of tasks, a collection builder. Collection builders allow tasks to be created via chained methods.  All of the tasks created by the same builder are added to a collection; when the <code>run()</code> method is called, all of the tasks in the collection run. </p>
+<p>The 'publish' command from Robo's own RoboFile is shown below.  It uses a collection builder to run some git and filesystem operations. The "completion" tasks are run after all other tasks complete, or during rollback processing when an operation fails.</p>
 <pre><code class="php">&lt;?php
 class RoboFile extends \Robo\Tasks
 {

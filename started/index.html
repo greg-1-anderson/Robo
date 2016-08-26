@@ -6,7 +6,7 @@
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         
         
-        <link rel="canonical" href="http://robo.li/getting-started/">
+        <link rel="canonical" href="http://robo.li/started/">
         <link rel="shortcut icon" href="../../img/favicon.png">
         
         <link href='http://fonts.googleapis.com/css?family=Source+Sans+Pro' rel='stylesheet' type='text/css'>
@@ -68,33 +68,9 @@
                 
                 
                 
-                    <li >
-                        <a href="../collections/">Collections</a>
-                    </li>
-                
-                
-                
                     <li class="dropdown">
                         <a href="#" class="dropdown-toggle" data-toggle="dropdown">Tasks <b class="caret"></b></a>
                         <ul class="dropdown-menu">
-                        
-                            
-<li >
-    <a href="../tasks/ApiGen/">ApiGen Tasks</a>
-</li>
-
-                        
-                            
-<li >
-    <a href="../tasks/Archive/">Archive Tasks</a>
-</li>
-
-                        
-                            
-<li >
-    <a href="../tasks/Assets/">Assets Tasks</a>
-</li>
-
                         
                             
 <li >
@@ -104,25 +80,7 @@
                         
                             
 <li >
-    <a href="../tasks/Bower/">Bower Tasks</a>
-</li>
-
-                        
-                            
-<li >
-    <a href="../tasks/Composer/">Composer Tasks</a>
-</li>
-
-                        
-                            
-<li >
-    <a href="../tasks/Development/">Development Tasks</a>
-</li>
-
-                        
-                            
-<li >
-    <a href="../tasks/Docker/">Docker Tasks</a>
+    <a href="../tasks/FileSystem/">FileSystem Tasks</a>
 </li>
 
                         
@@ -134,25 +92,31 @@
                         
                             
 <li >
-    <a href="../tasks/Filesystem/">Filesystem Tasks</a>
+    <a href="../tasks/Composer/">Composer Tasks</a>
 </li>
 
                         
                             
 <li >
-    <a href="../tasks/Gulp/">Gulp Tasks</a>
+    <a href="../tasks/Vcs/">VCS Tasks</a>
 </li>
 
                         
                             
 <li >
-    <a href="../tasks/Npm/">NPM Tasks</a>
+    <a href="../tasks/Development/">Development Tasks</a>
 </li>
 
                         
                             
 <li >
-    <a href="../tasks/Remote/">SSH, Rsync Tasks</a>
+    <a href="../tasks/Assets/">Assets Tasks</a>
+</li>
+
+                        
+                            
+<li >
+    <a href="../tasks/Remote/">Remote Tasks</a>
 </li>
 
                         
@@ -164,17 +128,23 @@
                         
                             
 <li >
-    <a href="../tasks/Vcs/">VCS Tasks</a>
+    <a href="../tasks/Npm/">NPM Tasks</a>
+</li>
+
+                        
+                            
+<li >
+    <a href="../tasks/Bower/">Bower Tasks</a>
+</li>
+
+                        
+                            
+<li >
+    <a href="../tasks/Docker/">Docker Tasks</a>
 </li>
 
                         
                         </ul>
-                    </li>
-                
-                
-                
-                    <li >
-                        <a href="../changelog/">Releases</a>
                     </li>
                 
                 
@@ -194,14 +164,14 @@
                         </a>
                     </li>
                     <li >
-                        <a rel="prev" href="../collections/">
+                        <a rel="prev" href="../tasks/Base/">
                             Next <i class="fa fa-arrow-right"></i>
                         </a>
                     </li>
                 
                 
                     <li>
-                        <a href="https://github.com/consolidation-org/Robo/">
+                        <a href="https://github.com/codegyre/robo/">
                             
                                 <i class="fa fa-github"></i>
                             
@@ -360,7 +330,7 @@ Any special character like <code>-</code> will be passed into without change.</p
  *     +--------+-------------+
  *
  * @param int $start Number to start from
- * @param int $steps Number of steps to perform
+ * @param $steps int Number of steps to perform
  * @param array $opts
  * @option $graphic Display the sequence graphically using cube
  *                  representation
@@ -396,44 +366,42 @@ Help:
 </code></pre>
 
 <p>Arguments and options are populated from annotations.</p>
-<p>Initially added with <a href="https://github.com/consolidation-org/Robo/pull/71">PR by @jonsa</a>; now provided by the <a href="https://github.com/consolidation-org/annotated-command">consolidation/annotated-command</a> project, which was factored out from Robo.</p>
-<h3 id="ignored-methods">Ignored methods</h3>
-<p>Robo ignores any method of your RoboFile that begins with <code>get</code> or <code>set</code>. These methods are presumed to be data accessors, not commands.  To implement a command whose name contains <code>get</code> or <code>set</code>, use the <code>@command</code> annotation.</p>
-<pre><code class="php">&lt;?php
-    /**
-     * @command set-alignment
-     */
-    function setAlignment($value)
-    {
-        ...
-    }
-?&gt;
-</code></pre>
-
+<p>Added with <a href="https://github.com/Codegyre/Robo/pull/71">PR by @jonsa</a>; now provided by the <a href="https://github.com/consolidation-org/annotation-command">consolidation/annotation-command</a> project, which was factored out from Robo.</p>
 <h2 id="tasks">Tasks</h2>
-<p>Robo commands typically divide the work they need to accomplish into <strong>tasks</strong>. The command first determines what needs to be done, inspecting current state if necessary, and then sets up and executes one or more tasks that make the actual changes needed by the command.  (See also the documentation on <a href="../collections/">Collections</a>, which allow you to combine groups of tasks which can provide rollback functions to recover from failure situations.)</p>
+<p>Robo commands typically divide the work they need to accomplish into <strong>tasks</strong>. The command first determines what needs to be done, inspecting current state if necessary, and then sets up and executes one or more tasks that make the actual changes needed by the command.  (See also the documentation on <a href="collections.md">Collections</a>.)</p>
 <p>The convention used to add new tasks for use in your RoboFiles is to create a wrapper trait that instantiates the implementation class for each task. Each task method in the trait should start with the prefix <code>task</code>, and should use <strong>chained method calls</strong> for configuration. Task execution should be triggered by the method <code>run</code>. </p>
 <p><em>It is recommended to have store your trait loading task in a <code>loadTasks</code> file in the same namespace as the task implementation.</em></p>
-<p>A very basic task is shown below.  The namespace is <code>MyAssetTasks</code>, and the example task is <code>CompileAssets</code>. To customize to your purposes, choose an appropriate namespace, and then define as many tasks as you need.</p>
+<p>A very basic task is shown below:</p>
 <pre><code class="php">&lt;?php
-namespace MyAssetTasks;
+namespace CompileAssets;
+
+use Robo\Container\SimpleServiceProvider;
 
 trait loadTasks
 {
     /**
-     * Example task to compile assets
-     *
-     * @param string $pathToCompileAssets
-     * @return \MyAssetTasks\CompileAssets
+     * Return services.
+     */
+    public static function getCompileAssetsServices()
+    {
+        return new SimpleServiceProvider(
+            [
+                'taskCompileAssets' =&gt; CompileAssets::class,
+            ]
+        );
+    }
+
+    /**
+     * @param null $pathToCompileAssets
+     * @return \Robo\Task\CompileAssets\CompileAssets
      */
     protected function taskCompileAssets($path = null)
     {
-        // Always construct your tasks with the `task()` task builder.
-        return $this-&gt;task(CompileAssets::class, $path);
+        return $this-&gt;task(__FUNCTION__, $path);
     }
 }
 
-class CompileAssets implements \Robo\Contract\TaskInterface
+class CompileAssets implements Robo\Contract\TaskInterface
 {
     // configuration params
     protected $path;
@@ -459,13 +427,13 @@ class CompileAssets implements \Robo\Contract\TaskInterface
 ?&gt;
 </code></pre>
 
-<p>To use it in a RoboFile, include the task via its trait:</p>
+<p>To use it in a RoboFile, you should include this task via its trait:</p>
 <pre><code class="php">&lt;?php
-class RoboFile extends \Robo\Tasks
+class RoboFile extends Robo\Tasks
 {
-    use \MyAssetTasks\loadTasks;
+    use CompileAssets\loadTasks;
 
-    public function build()
+    function build()
     {
         $this-&gt;taskCompileAssets('web/css-src')
             -&gt;to('web/assets.min.css')
@@ -475,7 +443,12 @@ class RoboFile extends \Robo\Tasks
 ?&gt;
 </code></pre>
 
-<p>Robo\Tasks includes all of the standard task traits by default, so a RoboFile may call the <code>$this-&gt;taskXXX</code> method for any of these tasks. To use an external task, ensure that its class files are available (e.g. <code>require</code> its project in your composer.json file), and include corresponding trait or traits in your Robofile.</p>
+<p>Robo\Tasks includes all of the standard task traits by default, so a RoboFile may call the <code>$this-&gt;taskXXX</code> method for any of these tasks. To use an external task, ensure that its class files are available (e.g. <code>require</code> its project in your composer.json file), register the services defined in the project's loadTraits, and include corresponding trait or traits in your Robofile.</p>
+<p>Services are registered with Robo as follows:</p>
+<pre><code>$container = \Robo\Config::getContainer();
+$container-&gt;addServiceProvider(\CompileAssets\loadTasks::getCollectionServices());
+</code></pre>
+
 <h3 id="shortcuts">Shortcuts</h3>
 <p>Some tasks may have shortcuts. If a task does not require multi-step configuration, it can be executed with a single line:</p>
 <pre><code class="php">&lt;?php
@@ -544,31 +517,22 @@ class RoboFile
 <h3 id="formatters">Formatters</h3>
 <p>It is preferable for commands that look up and display information should avoid doing IO directly, and should instead return the data they wish to display as an array. This data can then be converted into different data formats, such as "table" and "json". The user may select which formatter to use via the --format option.</p>
 <h3 id="progress">Progress</h3>
-<p>Robo supports progress indicators via the Symfony ProgressBar class.  Long-running tasks that wish to display the progress indicator may do so via four simple steps:</p>
-<ul>
-<li>Override the <code>progressIndicatorSteps()</code> method and return the number of "steps" in the operation.</li>
-<li>Call <code>$this-&gt;startProgressIndicator()</code> to begin the progress indicator running.</li>
-<li>Call <code>$this-&gt;advanceProgressIndicator()</code> a number of times equal to the result returned by <code>progressIndicatorSteps()</code></li>
-<li>Call <code>$this-&gt;stopProgressIndicator()</code> when the operation is completed.</li>
-</ul>
-<p>An example of this is shown below:</p>
+<p>Long-running tasks that wish to display a progress indicator may do so by way of the ProgressIndicatorAwareTrait.</p>
 <pre><code class="php">&lt;?php
-class MyTask extends BaseTask
+use Robo\Contract\ProgressIndicatorAwareInterface;
+use Robo\Common\ProgressIndicatorAwareTrait;
+
+class MyTask extends BaseTask implements ProgressIndicatorAwareInterface
 {
-    protected $steps = 10;
+    use ProgressIndicatorAwareTrait;
 
-    public function progressIndicatorSteps()
-    {
-        return $this-&gt;steps;
-    }
-
-    public function run()
-    {
+    function run(){
         $exitCode = 0;
+        $steps = 10;
         $errorMessage = &quot;&quot;;
 
-        $this-&gt;startProgressIndicator();
-        for ($i = 0; $i &lt; $this-&gt;steps; ++$i) {
+        $this-&gt;startProgressIndicator($steps);
+        for ($i = 0; $i &lt; $steps; ++$i) {
             $this-&gt;advanceProgressIndicator();
         }
         $this-&gt;stopProgressIndicator();
@@ -579,8 +543,7 @@ class MyTask extends BaseTask
 ?&gt;
 </code></pre>
 
-<p>Tasks should not attempt to use a specific progress indicator (e.g. the Symfony ProgressBar class) directly, as the ProgressIndicatorAwareTrait allows for an appropriate progress indicator to be used (or omitted) as best suits the application.</p>
-<p>Note that when using <a href="../collections/">Collections</a>, the progress bar will automatically be shown if the collection takes longer than two seconds to run.  Each task in the collection will count for one "step"; if the task supports progress indicators as shown above, then it will add an additional number of steps as indicated by its <code>progressIndicatorSteps()</code> method.</p></div>
+<p>Tasks should not attempt to use a specific progress indicator (e.g. the Symfony ProgressBar class) directly, as the ProgressIndicatorAwareTrait allows for an appropriate progress indicator to be used (or omitted) as best suits the application.</p></div>
             
 
         </div>
@@ -589,13 +552,7 @@ class MyTask extends BaseTask
         <footer class="col-md-12">
             <div >
 
-                <p>Robo is product of <a href="http://codegyre.com">Codegyre</a>. 
-
-</p>
-<p>
-    Robo is on <a href="http://twitter.com/robo_php">Twitter</a> and on <a href="https://github.com/codegyre/robo">GitHub</a>
-</p>
-                
+                <p>Robo is product of <a href="http://codegyre.com">Codegyre</a></p>
                 <p>
                     See also:
                     <a href="http://codeception.com">Codeception</a> |

@@ -226,6 +226,8 @@
         
             <li><a href="#install">Install</a></li>
         
+            <li><a href="#remove">Remove</a></li>
+        
             <li><a href="#update">Update</a></li>
         
             <li><a href="#validate">Validate</a></li>
@@ -294,6 +296,33 @@ $this-&gt;taskComposerInstall('path/to/my/composer.phar')
 </code></pre>
 
 <ul>
+<li><code>preferDist()</code>  adds <code>prefer-dist</code> option to composer</li>
+<li><code>preferSource()</code>  adds <code>prefer-source</code> option to composer</li>
+<li><code>noDev()</code>  adds <code>no-dev</code> option to composer</li>
+<li><code>noAnsi()</code>  adds <code>no-ansi</code> option to composer</li>
+<li><code>ansi()</code>  adds <code>ansi</code> option to composer</li>
+<li><code>optimizeAutoloader()</code>  adds <code>optimize-autoloader</code> option to composer</li>
+<li><code>dir($dir)</code>  changes working directory of command</li>
+<li><code>printed($arg)</code>  Should command output be printed</li>
+<li><code>arg($arg)</code>  Pass argument to executable</li>
+<li><code>args($args)</code>  Pass methods parameters as arguments to executable</li>
+<li><code>option($option, $value = null)</code>  Pass option to executable. Options are prefixed with <code>--</code> , value can be provided in second parameter.</li>
+<li><code>optionList($option, $value = null)</code>  Pass multiple options to executable. Value can be a string or array.</li>
+</ul>
+<h2 id="remove">Remove</h2>
+<p>Composer Validate</p>
+<pre><code class="php">&lt;?php
+// simple execution
+$this-&gt;taskComposerValidate()-&gt;run();
+?&gt;
+</code></pre>
+
+<ul>
+<li><code>dev()</code> </li>
+<li><code>noProgress()</code> </li>
+<li><code>noUpdate()</code> </li>
+<li><code>updateNoDev()</code> </li>
+<li><code>noUpdateWithDependencies()</code> </li>
 <li><code>preferDist()</code>  adds <code>prefer-dist</code> option to composer</li>
 <li><code>preferSource()</code>  adds <code>prefer-source</code> option to composer</li>
 <li><code>noDev()</code>  adds <code>no-dev</code> option to composer</li>
