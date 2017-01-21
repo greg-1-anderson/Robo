@@ -55,7 +55,7 @@ install:
   - mkdir c:\test_temp
 
 test_script:
-  - php composer.phar test
+  - robo test
 
 # environment variables
 environment:
